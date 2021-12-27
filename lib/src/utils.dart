@@ -23,9 +23,9 @@ Color lerpMultipleColors({
 }
 
 double clampedInverseLerpDouble(double min, double max, double value) {
-  assert(min < max);
   if (value <= min) return 0;
   if (value >= max) return 1;
   double difference = max - min;
+  if (difference <= 0) return 1;
   return (value - min) / difference;
 }

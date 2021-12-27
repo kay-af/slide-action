@@ -6,68 +6,85 @@ import 'package:slide_to_perform/src/utils.dart' as utils;
 
 const double kThumbMovementSmoothingFactor = 0.015;
 
+mixin SlideToPerformStateMixin {
+  bool get isDragging;
+  bool get isDisabled;
+  double get thumbFraction;
+}
+
+typedef SlideToPerformWidgetBuilder = Widget Function(
+  BuildContext buildContext,
+  SlideToPerformStateMixin currentState,
+);
+
 class SlideToPerform extends StatefulWidget {
   const SlideToPerform({
-    this.onPerform,
+    required this.trackBuilder,
+    required this.thumbBuilder,
+    required this.onPerform,
     this.trackHeight = 64,
-    this.thumbMargin = 4,
     this.snapAnimationDuration = const Duration(milliseconds: 400),
     this.snapAnimationCurve = Curves.easeOut,
-    this.performSnapThreshold = 0.85,
+    this.actionSnapThreshold = 0.85,
     this.rightToLeft = false,
     this.thumbWidth,
-    this.thumbColors = const [Colors.orange, Colors.deepOrange],
-    this.trackColors = const [Colors.white],
-    this.fillTrack = true,
-    this.roundiness = 24,
+    this.stretchThumb = false,
+    this.thumbHitTestBehavior = HitTestBehavior.opaque,
     Key? key,
   }) : super(key: key);
 
+  final SlideToPerformWidgetBuilder trackBuilder;
+  final SlideToPerformWidgetBuilder thumbBuilder;
   final double trackHeight;
-  final double thumbMargin;
   final double? thumbWidth;
-  final double performSnapThreshold;
+  final double actionSnapThreshold;
   final Duration snapAnimationDuration;
   final Curve snapAnimationCurve;
   final VoidCallback? onPerform;
   final bool rightToLeft;
-  final List<Color> thumbColors;
-  final List<Color> trackColors;
-  final bool fillTrack;
-  final double roundiness;
+  final bool stretchThumb;
+  final HitTestBehavior thumbHitTestBehavior;
 
   @override
   _SlideToPerformState createState() => _SlideToPerformState();
 }
 
 class _SlideToPerformState extends State<SlideToPerform>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, SlideToPerformStateMixin {
   late bool _isDragging;
-  late double _thumbAlignmentFraction;
-  late double _targetThumbAlignmentFraction;
-  late final GlobalKey _sliderContainerKey;
-  RenderBox? _sliderContainerRenderBox;
+  late double _currentThumbFraction;
+  late double _targetThumbFraction;
+  late double _fingerOffsetX;
+  late GlobalKey _trackGlobalKey;
+  RenderBox? _trackRenderBox;
   late final AnimationController _thumbAnimationController;
-  late final FrameChangeCallbackProvider _frameChangeCallbackProvider;
+  late final FrameChangeCallbackProvider _smoothThumbUpdateCallbackProvider;
+
+  // #region LifeCycle Methods
 
   @override
   void initState() {
     super.initState();
     _isDragging = false;
-    _thumbAlignmentFraction = 0;
-    _targetThumbAlignmentFraction = 0;
-    _sliderContainerKey = GlobalKey();
+    _currentThumbFraction = 0;
+    _targetThumbFraction = 0;
+    _fingerOffsetX = 0;
+    _trackGlobalKey = GlobalKey();
     _thumbAnimationController = AnimationController(vsync: this);
-    _frameChangeCallbackProvider = FrameChangeCallbackProvider(
+    _smoothThumbUpdateCallbackProvider = FrameChangeCallbackProvider(
       vsync: this,
-      callback: _updateThumbMovement,
+      callback: _smoothUpdateThumbPosition,
     );
+    WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
+      setState(() => _trackRenderBox =
+          _trackGlobalKey.currentContext!.findRenderObject() as RenderBox);
+    });
   }
 
   @override
   void dispose() {
     _thumbAnimationController.dispose();
-    _frameChangeCallbackProvider.dispose();
+    _smoothThumbUpdateCallbackProvider.dispose();
     super.dispose();
   }
 
@@ -76,101 +93,73 @@ class _SlideToPerformState extends State<SlideToPerform>
     if (mounted) super.setState(fn);
   }
 
-  void _updateThumbMovement(Duration delta) {
+  // #endregion
+
+  // #region State Interface
+
+  @override
+  bool get isDragging => _isDragging;
+
+  @override
+  double get thumbFraction => _currentThumbFraction;
+
+  @override
+  bool get isDisabled => widget.onPerform == null;
+
+  // #endregion
+
+  // #region Helpers
+
+  double get _thumbWidth {
+    return min(
+      _trackRenderBox!.size.width / 2.0,
+      widget.thumbWidth ?? widget.trackHeight,
+    );
+  }
+
+  void _smoothUpdateThumbPosition(Duration delta) {
     final double lerp =
         (kThumbMovementSmoothingFactor * delta.inMilliseconds).clamp(0.0, 1.0);
 
     setState(
-      () => _thumbAlignmentFraction = lerpDouble(
-            _thumbAlignmentFraction,
-            _targetThumbAlignmentFraction,
-            lerp,
-          ) ??
-          0,
+      () => _currentThumbFraction = lerpDouble(
+        _currentThumbFraction,
+        _targetThumbFraction,
+        lerp,
+      )!,
     );
   }
 
-  bool get isDragging => _isDragging;
-
-  Color get thumbColor => utils.lerpMultipleColors(
-        colors: widget.thumbColors,
-        t: _thumbAlignmentFraction,
-      );
-
-  Color get trackColor => utils.lerpMultipleColors(
-        colors: widget.trackColors,
-        t: _thumbAlignmentFraction,
-      );
-
-  Alignment get thumbAlignmentStart =>
+  Alignment get _thumbAlignmentStart =>
       widget.rightToLeft ? Alignment.centerRight : Alignment.centerLeft;
 
-  Alignment get thumbAlignmentEnd =>
+  Alignment get _thumbAlignmentEnd =>
       widget.rightToLeft ? Alignment.centerLeft : Alignment.centerRight;
 
-  Size get thumbSize {
-    double implicitHeight = widget.trackHeight - widget.thumbMargin * 2;
-    return Size(widget.thumbWidth ?? implicitHeight, implicitHeight);
+  double get _trackLeftX => _trackRenderBox!.localToGlobal(Offset.zero).dx;
+
+  double get _trackRightX => _trackLeftX + _trackRenderBox!.size.width;
+
+  double get _anchorLeftX => _trackLeftX + _thumbWidth / 2.0;
+
+  double get _anchorRightX => _trackRightX - _thumbWidth / 2.0;
+
+  double get _thumbCenterPosition => lerpDouble(
+        _anchorLeftX,
+        _anchorRightX,
+        _currentThumbFraction,
+      )!;
+
+  double get _stretchedThumbWidth {
+    assert(widget.stretchThumb);
+    return _thumbCenterPosition - _trackLeftX + _thumbWidth / 2.0;
   }
-
-  RenderBox? get sliderContainerRenderBox {
-    _sliderContainerRenderBox = _sliderContainerRenderBox ??
-        _sliderContainerKey.currentContext?.findRenderObject() as RenderBox?;
-    return _sliderContainerRenderBox;
-  }
-
-  double? get trackWidth => sliderContainerRenderBox?.size.width;
-
-  double? get trackLeftX =>
-      sliderContainerRenderBox?.localToGlobal(Offset.zero).dx;
-
-  double? get trackRightX {
-    if (trackLeftX != null && trackWidth != null) {
-      return trackLeftX! + trackWidth!;
-    }
-  }
-
-  double? get anchorLeftX {
-    if (trackLeftX != null) {
-      return trackLeftX! + (widget.thumbMargin + thumbSize.width / 2.0);
-    }
-  }
-
-  double? get anchorRightX {
-    if (trackRightX != null) {
-      return trackRightX! - (widget.thumbMargin + thumbSize.width / 2.0);
-    }
-  }
-
-  double? get fillTrackWidth {
-    assert(widget.fillTrack);
-    final double? thumbPosition =
-        lerpDouble(anchorLeftX, anchorRightX, _thumbAlignmentFraction);
-    if (thumbPosition != null && trackLeftX != null) {
-      return thumbPosition +
-          (thumbSize.width / 2.0) -
-          trackLeftX! -
-          widget.thumbMargin;
-    }
-  }
-
-  double? get trackWidgetOpacity {
-    return lerpDouble(1, 0, (_thumbAlignmentFraction * 2).clamp(0.0, 1.0));
-  }
-
-  double get trackBorderRadius =>
-      min(widget.trackHeight / 2.0, widget.roundiness);
-
-  double get thumbBorderRadius => min(
-        thumbSize.height / 2.0,
-        widget.roundiness / widget.trackHeight * thumbSize.height,
-      );
 
   void _animationToAlignmentFraction() {
     final double fraction = _thumbAnimationController.value.clamp(0.0, 1.0);
     setState(() {
-      _thumbAlignmentFraction = fraction;
-      _targetThumbAlignmentFraction = fraction;
+      _currentThumbFraction = fraction;
+      _targetThumbFraction = fraction;
     });
   }
 
@@ -187,7 +176,8 @@ class _SlideToPerformState extends State<SlideToPerform>
   }
 
   void _animateThumbToStart() {
-    _thumbAnimationController.value = _thumbAlignmentFraction;
+    _stopAnimation();
+    _thumbAnimationController.value = _currentThumbFraction;
     _thumbAnimationController.duration = widget.snapAnimationDuration;
     _attachAnimationListener();
     _thumbAnimationController
@@ -201,7 +191,8 @@ class _SlideToPerformState extends State<SlideToPerform>
   }
 
   void _animateThumbToEnd() {
-    _thumbAnimationController.value = _thumbAlignmentFraction;
+    _stopAnimation();
+    _thumbAnimationController.value = _currentThumbFraction;
     _thumbAnimationController.duration = widget.snapAnimationDuration;
     _attachAnimationListener();
     _thumbAnimationController
@@ -215,101 +206,100 @@ class _SlideToPerformState extends State<SlideToPerform>
     });
   }
 
+  void _onThumbHorizontalDragStart(DragStartDetails details) {
+    setState(() {
+      _isDragging = true;
+      _fingerOffsetX = details.globalPosition.dx - _thumbCenterPosition;
+    });
+    _stopAnimation();
+    _smoothThumbUpdateCallbackProvider.start();
+  }
+
+  void _onThumbHorizontalDragEnd(DragEndDetails details) {
+    setState(() => _isDragging = false);
+    _smoothThumbUpdateCallbackProvider.stop();
+    if (_targetThumbFraction >= widget.actionSnapThreshold) {
+      _animateThumbToEnd();
+    } else {
+      _animateThumbToStart();
+    }
+  }
+
+  void _onThumbHorizontalDragCancel() {
+    setState(() => _isDragging = false);
+    _smoothThumbUpdateCallbackProvider.stop();
+    _animateThumbToStart();
+  }
+
+  void _onThumbDragUpdate(DragUpdateDetails details) {
+    final double fingerPosition = details.globalPosition.dx;
+    final double fraction = utils.clampedInverseLerpDouble(
+      _anchorLeftX,
+      _anchorRightX,
+      fingerPosition - _fingerOffsetX,
+    );
+    setState(
+      () =>
+          _targetThumbFraction = widget.rightToLeft ? 1.0 - fraction : fraction,
+    );
+  }
+
+  // #endregion
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      key: _sliderContainerKey,
-      width: double.infinity,
-      height: widget.trackHeight,
-      decoration: BoxDecoration(
-        color: trackColor,
-        borderRadius: BorderRadius.circular(trackBorderRadius),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 8),
-        ],
-      ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Positioned.fill(
-            child: Opacity(
-              opacity: trackWidgetOpacity ?? 1.0,
-              child: const Center(
-                child: Text("Slide to unlock"),
-              ),
-            ),
+    return UnconstrainedBox(
+      alignment: Alignment.center,
+      constrainedAxis: Axis.horizontal,
+      child: ConstrainedBox(
+        key: _trackGlobalKey,
+        constraints: BoxConstraints.tight(
+          Size.fromHeight(
+            widget.trackHeight,
           ),
-          if (widget.fillTrack)
-            Align(
-              alignment: thumbAlignmentStart,
-              child: Container(
-                width: fillTrackWidth,
-                margin: EdgeInsets.all(
-                  widget.thumbMargin,
-                ),
-                decoration: BoxDecoration(
-                  color: thumbColor,
-                  borderRadius: BorderRadius.circular(thumbBorderRadius),
-                ),
-              ),
-            ),
-          Align(
-            alignment: Alignment.lerp(thumbAlignmentStart, thumbAlignmentEnd,
-                    _thumbAlignmentFraction) ??
-                thumbAlignmentStart,
-            child: GestureDetector(
-              onHorizontalDragStart: (_) {
-                setState(() => _isDragging = true);
-                _stopAnimation();
-                _frameChangeCallbackProvider.start();
-              },
-              onHorizontalDragEnd: (_) {
-                setState(() => _isDragging = false);
-                _frameChangeCallbackProvider.stop();
-                if (_targetThumbAlignmentFraction >=
-                    widget.performSnapThreshold) {
-                  _animateThumbToEnd();
-                } else {
-                  _animateThumbToStart();
-                }
-              },
-              onHorizontalDragCancel: () {
-                setState(() => _isDragging = false);
-                _frameChangeCallbackProvider.stop();
-                _animateThumbToStart();
-              },
-              onHorizontalDragUpdate: (details) {
-                if (anchorLeftX != null && anchorRightX != null) {
-                  final double currentThumbPosition = details.globalPosition.dx;
-                  final double fraction = utils.clampedInverseLerpDouble(
-                    anchorLeftX!,
-                    anchorRightX!,
-                    currentThumbPosition,
-                  );
-                  setState(() => _targetThumbAlignmentFraction =
-                      widget.rightToLeft ? 1.0 - fraction : fraction);
-                }
-              },
-              child: Container(
-                width: thumbSize.width,
-                margin: EdgeInsets.all(
-                  widget.thumbMargin,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(
-                    thumbSize.height,
+        ),
+        child: _trackRenderBox == null
+            ? null
+            : Stack(
+                fit: StackFit.expand,
+                children: [
+                  Positioned.fill(
+                    child: widget.trackBuilder(
+                      context,
+                      this,
+                    ),
                   ),
-                  color: widget.fillTrack ? null : thumbColor,
-                ),
-                alignment: Alignment.center,
-                child: const Icon(
-                  Icons.chevron_right_sharp,
-                  color: Colors.white,
-                ),
+                  Align(
+                    alignment: widget.stretchThumb
+                        ? _thumbAlignmentStart
+                        : Alignment.lerp(
+                            _thumbAlignmentStart,
+                            _thumbAlignmentEnd,
+                            _currentThumbFraction,
+                          )!,
+                    child: GestureDetector(
+                      behavior: widget.thumbHitTestBehavior,
+                      onHorizontalDragStart: _onThumbHorizontalDragStart,
+                      onHorizontalDragEnd: _onThumbHorizontalDragEnd,
+                      onHorizontalDragCancel: _onThumbHorizontalDragCancel,
+                      onHorizontalDragUpdate: _onThumbDragUpdate,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints.tight(
+                          Size.fromWidth(
+                            widget.stretchThumb
+                                ? _stretchedThumbWidth
+                                : _thumbWidth,
+                          ),
+                        ),
+                        child: widget.thumbBuilder(
+                          context,
+                          this,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ),
-        ],
       ),
     );
   }
