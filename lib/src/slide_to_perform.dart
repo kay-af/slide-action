@@ -3,7 +3,6 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:slide_to_perform/src/frame_change_callback_provider.dart';
-import 'package:slide_to_perform/src/utils.dart' as utils;
 
 const double kThumbMovementSmoothingFactor = 0.015;
 
@@ -187,6 +186,12 @@ class _SlideToPerformState extends State<SlideToPerform>
     return (_thumbCenterPosition - _trackStart).abs() + _thumbWidth / 2.0;
   }
 
+  double _clampedInverseLerpDouble(double a, double b, double value) {
+    double difference = b - a;
+    if (difference == 0) return value < a ? 0 : 1;
+    return ((value - a) / difference).clamp(0.0, 1.0);
+  }
+
   void _animationToAlignmentFraction() {
     final double fraction = _thumbAnimationController.value.clamp(0.0, 1.0);
     setState(() {
@@ -275,7 +280,7 @@ class _SlideToPerformState extends State<SlideToPerform>
 
   void _onThumbDragUpdate(DragUpdateDetails details) {
     final double fingerPosition = details.globalPosition.dx;
-    final double fraction = utils.clampedInverseLerpDouble(
+    final double fraction = _clampedInverseLerpDouble(
       _anchorStart,
       _anchorEnd,
       fingerPosition - _fingerOffsetX,

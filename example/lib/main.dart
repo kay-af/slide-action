@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:slide_to_perform/slide_to_perform.dart';
@@ -19,6 +20,29 @@ class MyApp extends StatelessWidget {
   }
 }
 
+Color lerpColorList(
+  final List<Color> colors,
+  final double t,
+) {
+  assert(!t.isNaN, "Must be a number");
+  assert(t >= 0 && t <= 1, "Value out of range");
+  assert(colors.isNotEmpty, "Color list must not be empty");
+
+  if (colors.length == 1) return colors.first;
+  if (t == 1) return colors.last;
+
+  double scaled = t * (colors.length - 1);
+
+  Color firstColor = colors[scaled.floor()];
+  Color secondColor = colors[(scaled + 1.0).floor()];
+
+  return Color.lerp(
+    firstColor,
+    secondColor,
+    scaled - scaled.floor(),
+  )!;
+}
+
 class SlideToPerformExample extends StatelessWidget {
   const SlideToPerformExample({Key? key}) : super(key: key);
 
@@ -29,8 +53,9 @@ class SlideToPerformExample extends StatelessWidget {
         body: SingleChildScrollView(
           child: Column(
             children: [
-              const BasicSlideToPerform(),
-              const IOS4SlideToUnlock(),
+              const AnimatedImageThumbExample(),
+              const IndianFlagExample(),
+              const IOS4SlideToUnlockExample(),
             ]
                 .map(
                   (slideToPerformWidget) => Padding(
@@ -46,36 +71,122 @@ class SlideToPerformExample extends StatelessWidget {
   }
 }
 
-class BasicSlideToPerform extends StatelessWidget {
-  const BasicSlideToPerform({Key? key}) : super(key: key);
+class AnimatedImageThumbExample extends StatelessWidget {
+  const AnimatedImageThumbExample({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return SlideToPerform(
+      onPerform: () {},
+      trackBuilder: (context, state) {
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12.0),
+            color: Colors.grey.shade100,
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 8,
+              ),
+            ],
+          ),
+        );
+      },
+      thumbBuilder: (context, state) {
+        return Container(
+          margin: const EdgeInsets.all(4.0),
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8.0),
+            color: Colors.grey.shade100,
+          ),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 500),
+            child: state.thumbFraction <= 0.5
+                ? Image.network(
+                    "https://picsum.photos/id/1024/200/200",
+                    key: const ValueKey("FirstImage"),
+                    fit: BoxFit.cover,
+                  )
+                : Image.network(
+                    "https://picsum.photos/id/1025/200/200",
+                    key: const ValueKey("SecondImage"),
+                    fit: BoxFit.cover,
+                  ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class IndianFlagExample extends StatelessWidget {
+  const IndianFlagExample({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return SlideToPerform(
+        stretchThumb: true,
         trackBuilder: (contex, state) {
           return Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8.0),
-              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(12.0),
+              color: Colors.grey.shade100,
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 8,
+                ),
+              ],
             ),
           );
         },
         thumbBuilder: (context, state) {
           return Container(
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                const Icon(
+                  Icons.circle_outlined,
+                  color: Colors.blue,
+                ),
+                ...List<double>.generate(6, (index) => index * pi / 6).map(
+                  (e) => Transform.rotate(
+                    angle: e,
+                    alignment: Alignment.center,
+                    child: const Icon(
+                      Icons.horizontal_rule_sharp,
+                      color: Colors.blue,
+                    ),
+                  ),
+                ),
+              ],
+            ),
             margin: const EdgeInsets.all(4.0),
             decoration: BoxDecoration(
-              color: Colors.orange,
-              borderRadius: BorderRadius.circular(6.0),
+              gradient: LinearGradient(
+                colors: [
+                  Colors.orange.shade300,
+                  Colors.orange.shade500,
+                  Colors.white,
+                  Colors.white,
+                  Colors.green.shade700,
+                  Colors.green.shade800,
+                ],
+                stops: const [0, 0.33, 0.33, 0.67, 0.67, 1],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              borderRadius: BorderRadius.circular(8.0),
             ),
-            child: const Icon(Icons.chevron_right),
           );
         },
         onPerform: () {});
   }
 }
 
-class IOS4SlideToUnlock extends StatelessWidget {
-  const IOS4SlideToUnlock({Key? key}) : super(key: key);
+class IOS4SlideToUnlockExample extends StatelessWidget {
+  const IOS4SlideToUnlockExample({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
