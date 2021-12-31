@@ -2,33 +2,91 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:slide_to_perform/slide_to_perform.dart';
 import 'package:slide_to_perform/src/frame_change_callback_provider.dart';
 
+/// Eyeballed constant for smooth thumb movement.
+///
+/// Used in combination with [FrameChangeCallbackProvider] to
+/// generate a lerp factor used to smoothly move the *thumb* to
+/// target position.
 const double kThumbMovementSmoothingFactor = 0.015;
 
+/// Defines the behavior of the thumb after the sliding
+/// action has been performed.
+///
+/// The following behaviors are available:
+///
+/// - ```dart
+/// // The thumb sticks to the end and stays there until the user interacts.
+/// SlideToPerformEndBehavior.stayIndefinitely()
+/// ```
+/// ---
+/// - ```dart
+/// //  The thumb resets to the initial postion immediately.
+/// SlideToPerformEndBehavior.resetImmediately()
+/// ```
+/// ---
+/// - ```dart
+/// // The thumb resets to the initial postion after the given duration.
+/// // User can interact with the thumb to cancel this behavior anytime.
+/// SlideToPerformEndBehavior.resetDelayed(duration: ...)
+/// ```
 class SlideToPerformEndBehavior {
+  /// How long should the thumb stay at the end?
+  ///
+  /// `null` behaves as infinite duration.
   final Duration? stayDuration;
 
+  /// Should the thumb reset immediately after the action is performed?
   bool get resetImmediately =>
       stayDuration == Duration.zero || stayDuration?.isNegative == true;
 
+  /// Should the thumb stay at the end indefinitely after the action is performed?
   bool get stayIndefinitely => stayDuration == null;
 
+  /// Constructs a behavior that commands the [SlideToPerform] widget
+  /// to stay the thumb at the end indefinitely after the action is performed.
   const SlideToPerformEndBehavior.stayIndefinitely() : stayDuration = null;
 
+  /// Constructs a behavior that commands the [SlideToPerform] widget
+  /// to reset the thumb immediately after the action is performed.
   const SlideToPerformEndBehavior.resetImmediately()
       : stayDuration = Duration.zero;
 
+  /// Constructs a behavior that commands the [SlideToPerform] widget
+  /// to reset the thumb after the provided `duration` elapses since the action is performed.
   const SlideToPerformEndBehavior.resetDelayed({required Duration duration})
       : stayDuration = duration;
 }
 
+/// A *mixin* used to abstract out the state of the
+/// [SlideToPerform] widget.
+///
+/// The following details are available inside the state:
+///
+/// * `isDragging` - Is the thumb curently being dragged by the user?
+/// * `isDisabled` - Is the widget disabled?
+/// * `thumbFraction` - What percentage of the total length of the track  has been covered by
+/// the thumb? Goes from *0.0 to 1.0*
+///
+/// The state can be used to decorate the *track* and *thumb*. See [SlideToPerformWidgetBuilder] and [SlideToPerform].
 mixin SlideToPerformStateMixin {
+  /// Is the thumb currently being dragged?
   bool get isDragging;
+
+  /// Is the widget disabled?
   bool get isDisabled;
+
+  /// What percentage of the total length of the track  has been covered by
+  /// the thumb? Goes from *0.0 to 1.0*
   double get thumbFraction;
 }
 
+/// A builder for creating widgets that utilize [SlideToPerformStateMixin] to
+/// decorate themselves.
+/// 
+/// Used to build *track* and *thumb* in [SlideToPerform] widget.
 typedef SlideToPerformWidgetBuilder = Widget Function(
   BuildContext buildContext,
   SlideToPerformStateMixin currentState,
