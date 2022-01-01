@@ -41,6 +41,7 @@ typedef SlideActionWidgetBuilder = Widget Function(
 /// Note that if the calculated thumb width exceeds half the laid *track* width, the actual thumb is given a width
 /// of half the laid *track* width.
 class SlideAction extends StatefulWidget {
+  
   /// Creates a **SlideAction** widget.
   ///
   /// * `trackBuilder` - A builder callback to build the track widget using the

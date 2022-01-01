@@ -1,4 +1,3 @@
-import 'package:flutter/animation.dart';
 import 'package:flutter/scheduler.dart';
 
 /// `delta` stores the duration elapsed since last frame.

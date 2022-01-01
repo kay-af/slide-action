@@ -50,6 +50,9 @@ class SlideToPerformExample extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
+        appBar: AppBar(
+          title: const Text("Slide Action Example"),
+        ),
         body: SingleChildScrollView(
           child: Column(
             children: [
