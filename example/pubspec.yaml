@@ -9,7 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  slide_to_perform:
+  slide_action:
     path: ../
 
 dev_dependencies:

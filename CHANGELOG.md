@@ -1,3 +1,3 @@
-## 0.0.1
+# [0.0.1] - Slide Action Widget
 
-* TODO: Describe initial release.
+- Added slide action widget and an example project.

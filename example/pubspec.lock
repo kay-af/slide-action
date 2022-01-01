@@ -100,7 +100,7 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.99"
-  slide_to_perform:
+  slide_action:
     dependency: "direct main"
     description:
       path: ".."

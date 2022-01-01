@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:slide_to_perform/slide_to_perform.dart';
-import 'package:slide_to_perform/src/frame_change_callback_provider.dart';
+import 'package:slide_action/slide_action.dart';
+import 'package:slide_action/src/frame_change_callback_provider.dart';
 
 /// Eyeballed constant for smooth thumb movement.
 ///
@@ -12,126 +12,103 @@ import 'package:slide_to_perform/src/frame_change_callback_provider.dart';
 /// target position.
 const double kThumbMovementSmoothingFactor = 0.015;
 
-/// Defines the behavior of the thumb after the sliding
-/// action has been performed.
+/// A builder for creating a widget that utilizes [SlideActionStateMixin] to
+/// decorate themself.
 ///
-/// The following behaviors are available:
-///
-/// - ```dart
-/// // The thumb sticks to the end and stays there until the user interacts.
-/// SlideToPerformEndBehavior.stayIndefinitely()
-/// ```
-/// ---
-/// - ```dart
-/// //  The thumb resets to the initial postion immediately.
-/// SlideToPerformEndBehavior.resetImmediately()
-/// ```
-/// ---
-/// - ```dart
-/// // The thumb resets to the initial postion after the given duration.
-/// // User can interact with the thumb to cancel this behavior anytime.
-/// SlideToPerformEndBehavior.resetDelayed(duration: ...)
-/// ```
-class SlideToPerformEndBehavior {
-  /// How long should the thumb stay at the end?
-  ///
-  /// `null` behaves as infinite duration.
-  final Duration? stayDuration;
-
-  /// Should the thumb reset immediately after the action is performed?
-  bool get resetImmediately =>
-      stayDuration == Duration.zero || stayDuration?.isNegative == true;
-
-  /// Should the thumb stay at the end indefinitely after the action is performed?
-  bool get stayIndefinitely => stayDuration == null;
-
-  /// Constructs a behavior that commands the [SlideToPerform] widget
-  /// to stay the thumb at the end indefinitely after the action is performed.
-  const SlideToPerformEndBehavior.stayIndefinitely() : stayDuration = null;
-
-  /// Constructs a behavior that commands the [SlideToPerform] widget
-  /// to reset the thumb immediately after the action is performed.
-  const SlideToPerformEndBehavior.resetImmediately()
-      : stayDuration = Duration.zero;
-
-  /// Constructs a behavior that commands the [SlideToPerform] widget
-  /// to reset the thumb after the provided `duration` elapses since the action is performed.
-  const SlideToPerformEndBehavior.resetDelayed({required Duration duration})
-      : stayDuration = duration;
-}
-
-/// A *mixin* used to abstract out the state of the
-/// [SlideToPerform] widget.
-///
-/// The following details are available inside the state:
-///
-/// * `isDragging` - Is the thumb curently being dragged by the user?
-/// * `isDisabled` - Is the widget disabled?
-/// * `thumbFraction` - What percentage of the total length of the track  has been covered by
-/// the thumb? Goes from *0.0 to 1.0*
-///
-/// The state can be used to decorate the *track* and *thumb*. See [SlideToPerformWidgetBuilder] and [SlideToPerform].
-mixin SlideToPerformStateMixin {
-  /// Is the thumb currently being dragged?
-  bool get isDragging;
-
-  /// Is the widget disabled?
-  bool get isDisabled;
-
-  /// What percentage of the total length of the track  has been covered by
-  /// the thumb? Goes from *0.0 to 1.0*
-  double get thumbFraction;
-}
-
-/// A builder for creating widgets that utilize [SlideToPerformStateMixin] to
-/// decorate themselves.
-/// 
-/// Used to build *track* and *thumb* in [SlideToPerform] widget.
-typedef SlideToPerformWidgetBuilder = Widget Function(
+/// Used to build *track* and *thumb* in [SlideAction] widget.
+typedef SlideActionWidgetBuilder = Widget Function(
   BuildContext buildContext,
-  SlideToPerformStateMixin currentState,
+  SlideActionStateMixin currentState,
 );
 
-class SlideToPerform extends StatefulWidget {
-  const SlideToPerform({
+/// A customizable widget that shows a *track* and a *thumb* that can be
+/// slid all the way to perform an *action*.
+///
+/// ## Description:
+///
+/// Slide action works by providing a fixed size box for two major components each -
+/// The *track* and the *thumb*.
+///
+/// The height of the track is determined by `trackHeight`
+/// and the *track* fills the parent container horizontally.
+///
+/// The height of the *thumb* matches the `trackHeight` and
+/// the `thumbWidth` behaves in the following manner:
+///
+/// * If `thumbWidth` is **null**, `trackHeight` is used to calculate the width of the thumb.
+/// * If `thumbWidth` is **non-null**, `thumbWidth` is used to calculate the width of the thumb.
+///
+/// Note that if the calculated thumb width exceeds half the laid *track* width, the actual thumb is given a width
+/// of half the laid *track* width.
+class SlideAction extends StatefulWidget {
+  /// Creates a **SlideAction** widget.
+  ///
+  /// * `trackBuilder` - A builder callback to build the track widget using the
+  /// current state of the slide action widget.
+  /// * `thumbBuilder` - A builder callback to build the thumb widget using the
+  /// current state of the slide action widget.
+  /// * `onActionPerformed` - The callback which is called when the slide action
+  /// is performed. The widget is disabled (Gestures are disabled) when this field is null.
+  /// * `trackHeight` - The fixed height given to build the track.
+  /// * `thumbWidth` - Custom width for the thumb. `trackHeight` is used when null. Half of the laid track width
+  /// is used if the value exceeds the same.
+  /// * `snapAnimationDuration` - The duration of the animation which drives the thumb
+  /// to the initial / final position on the track depending on the position of the thumb and `actionSnapThreshold` value when it is
+  /// released.
+  /// * `snapAnimationCurve` - The curve used to drive the snap animation.
+  /// * `actionSnapThreshold` - A value ranging 0.0 to 1.0. Specifies the point along the length
+  /// of the anchor points for the thumb on the track after which if the finger is released, the thumb
+  /// moves to the end and `onActionPerformed` is called.
+  /// * `rightToLeft` - The thumb goes from right to left. Note that the `thumbFraction` in [SlideActionStateMixin]
+  /// considers right as 0.0 and left as 1.0 when true.
+  /// * `stretchThumb` - When true, the thumb stretches when dragged instead of moving.
+  /// * `disabledColorTint` - The color to be used to tint the widget when `onActionPerformed` is null.
+  /// * `thumbHitTestBehavior` - The hit test behavior to be used by the gesture detector wrapping the thumb.
+  /// * `endBehavior` - The behavior of the thumb after the action is performed. See [SlideActionEndBehavior]
+  /// for details.
+  SlideAction({
     required this.trackBuilder,
     required this.thumbBuilder,
-    required this.onPerform,
+    required this.onActionPerformed,
     this.trackHeight = 64,
+    this.thumbWidth,
     this.snapAnimationDuration = const Duration(milliseconds: 400),
     this.snapAnimationCurve = Curves.easeOut,
     this.actionSnapThreshold = 0.85,
     this.rightToLeft = false,
-    this.thumbWidth,
     this.stretchThumb = false,
     this.disabledColorTint = Colors.white54,
     this.thumbHitTestBehavior = HitTestBehavior.opaque,
-    this.endBehavior = const SlideToPerformEndBehavior.resetDelayed(
+    this.endBehavior = const SlideActionEndBehavior.resetDelayed(
       duration: Duration(milliseconds: 500),
     ),
     Key? key,
-  }) : super(key: key);
+  }) :
+    assert(trackHeight > 0 && trackHeight.isFinite && !trackHeight.isNaN, "Invalid track height"),
+    assert(thumbWidth == null || (thumbWidth > 0 && !thumbWidth.isNaN), "Invalid thumb width"),
+    assert(actionSnapThreshold >= 0.0 && actionSnapThreshold <= 1.0, "Value out of range"),
+    super(key: key);
 
-  final SlideToPerformWidgetBuilder trackBuilder;
-  final SlideToPerformWidgetBuilder thumbBuilder;
+  final SlideActionWidgetBuilder trackBuilder;
+  final SlideActionWidgetBuilder thumbBuilder;
   final double trackHeight;
   final double? thumbWidth;
   final double actionSnapThreshold;
   final Duration snapAnimationDuration;
   final Curve snapAnimationCurve;
-  final VoidCallback? onPerform;
+  final VoidCallback? onActionPerformed;
   final bool rightToLeft;
   final bool stretchThumb;
   final Color disabledColorTint;
   final HitTestBehavior thumbHitTestBehavior;
-  final SlideToPerformEndBehavior endBehavior;
+  final SlideActionEndBehavior endBehavior;
 
   @override
-  _SlideToPerformState createState() => _SlideToPerformState();
+  _SlideActionState createState() => _SlideActionState();
 }
 
-class _SlideToPerformState extends State<SlideToPerform>
-    with TickerProviderStateMixin, SlideToPerformStateMixin {
+class _SlideActionState extends State<SlideAction>
+    with TickerProviderStateMixin, SlideActionStateMixin {
   late bool _isDragging;
   late double _currentThumbFraction;
   late double _targetThumbFraction;
@@ -187,7 +164,7 @@ class _SlideToPerformState extends State<SlideToPerform>
   double get thumbFraction => _currentThumbFraction;
 
   @override
-  bool get isDisabled => widget.onPerform == null;
+  bool get isDisabled => widget.onActionPerformed == null;
 
   // #endregion
 
@@ -295,7 +272,7 @@ class _SlideToPerformState extends State<SlideToPerform>
         .orCancel
         .then((_) {
       _detachAnimationListener();
-      widget.onPerform!();
+      widget.onActionPerformed!();
 
       if (widget.endBehavior.resetImmediately) {
         _animateThumbToStart();

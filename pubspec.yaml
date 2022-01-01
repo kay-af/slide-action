@@ -1,7 +1,7 @@
-name: slide_to_perform
-description: A new Flutter package project.
+name: slide_action
+description: A customizable slide to perform an action widget.
 version: 0.0.1
-homepage: https://github.com/kay-af/slide-to-perform.git
+homepage: https://github.com/kay-af/slide-action.git
 
 environment:
   sdk: ">=2.15.1 <3.0.0"

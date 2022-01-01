@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:slide_to_perform/slide_to_perform.dart';
+import 'package:slide_action/slide_action.dart';
 
 void main() {
   runApp(const MyApp());
@@ -76,8 +76,8 @@ class AnimatedImageThumbExample extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SlideToPerform(
-      onPerform: () {},
+    return SlideAction(
+      onActionPerformed: () {},
       trackBuilder: (context, state) {
         return Container(
           decoration: BoxDecoration(
@@ -125,7 +125,7 @@ class IndianFlagExample extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SlideToPerform(
+    return SlideAction(
         stretchThumb: true,
         trackBuilder: (contex, state) {
           return Container(
@@ -181,7 +181,7 @@ class IndianFlagExample extends StatelessWidget {
             ),
           );
         },
-        onPerform: () {});
+        onActionPerformed: () {});
   }
 }
 
@@ -190,7 +190,7 @@ class IOS4SlideToUnlockExample extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SlideToPerform(
+    return SlideAction(
       stretchThumb: false,
       trackBuilder: (context, state) {
         return Container(
@@ -261,7 +261,7 @@ class IOS4SlideToUnlockExample extends StatelessWidget {
         );
       },
       thumbWidth: 80,
-      onPerform: () {},
+      onActionPerformed: () {},
     );
   }
 }
