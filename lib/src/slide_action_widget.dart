@@ -2,14 +2,15 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:slide_action/slide_action.dart';
 import 'package:slide_action/src/frame_change_callback_provider.dart';
 
 /// Eyeballed constant for smooth thumb movement.
 ///
 /// Used in combination with [FrameChangeCallbackProvider] to
-/// generate a lerp factor used to smoothly move the *thumb* to
-/// target position.
+/// generate a lerp factor to smoothly move the *thumb* to
+/// finger position.
 const double kThumbMovementSmoothingFactor = 0.015;
 
 /// A builder for creating a widget that utilizes [SlideActionStateMixin] to
@@ -41,7 +42,6 @@ typedef SlideActionWidgetBuilder = Widget Function(
 /// Note that if the calculated thumb width exceeds half the laid *track* width, the actual thumb is given a width
 /// of half the laid *track* width.
 class SlideAction extends StatefulWidget {
-  
   /// Creates a **SlideAction** widget.
   ///
   /// * `trackBuilder` - A builder callback to build the track widget using the
@@ -84,11 +84,13 @@ class SlideAction extends StatefulWidget {
       duration: Duration(milliseconds: 500),
     ),
     Key? key,
-  }) :
-    assert(trackHeight > 0 && trackHeight.isFinite && !trackHeight.isNaN, "Invalid track height"),
-    assert(thumbWidth == null || (thumbWidth > 0 && !thumbWidth.isNaN), "Invalid thumb width"),
-    assert(actionSnapThreshold >= 0.0 && actionSnapThreshold <= 1.0, "Value out of range"),
-    super(key: key);
+  })  : assert(trackHeight > 0 && trackHeight.isFinite && !trackHeight.isNaN,
+            "Invalid track height"),
+        assert(thumbWidth == null || (thumbWidth > 0 && !thumbWidth.isNaN),
+            "Invalid thumb width"),
+        assert(actionSnapThreshold >= 0.0 && actionSnapThreshold <= 1.0,
+            "Value out of range"),
+        super(key: key);
 
   final SlideActionWidgetBuilder trackBuilder;
   final SlideActionWidgetBuilder thumbBuilder;
@@ -111,13 +113,26 @@ class SlideAction extends StatefulWidget {
 class _SlideActionState extends State<SlideAction>
     with TickerProviderStateMixin, SlideActionStateMixin {
   late bool _isDragging;
+
+  /// The fractional position of the thumb on track.
   late double _currentThumbFraction;
+
+  /// The fractional position (X) of the finger on track.
   late double _targetThumbFraction;
+
+  /// The offset of the finger from thumb position when dragging starts.
   late double _fingerOffsetX;
+
+  /// Global key to get the render box of the laid track.
   late GlobalKey _trackGlobalKey;
+
   late final AnimationController _thumbAnimationController;
+
   late final FrameChangeCallbackProvider _smoothThumbUpdateCallbackProvider;
+
+  /// Supports the resetDelayed end behavior.
   Timer? _endBehaviorTimer;
+
   RenderBox? _trackRenderBox;
 
   // #region LifeCycle Methods
@@ -178,6 +193,8 @@ class _SlideActionState extends State<SlideAction>
     );
   }
 
+  /// Using the frame change callback provider, updates the current thumb position
+  /// to match the finger position smoothly.
   void _smoothUpdateThumbPosition(Duration delta) {
     final double lerp =
         (kThumbMovementSmoothingFactor * delta.inMilliseconds).clamp(0.0, 1.0);
@@ -197,26 +214,31 @@ class _SlideActionState extends State<SlideAction>
   Alignment get _thumbAlignmentEnd =>
       widget.rightToLeft ? Alignment.centerLeft : Alignment.centerRight;
 
+  /// Global position of the left border of the track.
   double get _trackLeftX => _trackRenderBox!.localToGlobal(Offset.zero).dx;
 
+  /// Global position of the right border of the track.
   double get _trackRightX => _trackLeftX + _trackRenderBox!.size.width;
 
+  /// Global center position of the thumb on the left side of the track.
   double get _anchorLeftX => _trackLeftX + _thumbWidth / 2.0;
 
+  /// Global center position of the thumb on the right side of the track.
   double get _anchorRightX => _trackRightX - _thumbWidth / 2.0;
 
+  /// To support RTL
   double get _trackStart => widget.rightToLeft ? _trackRightX : _trackLeftX;
-
   double get _anchorStart => widget.rightToLeft ? _anchorRightX : _anchorLeftX;
-
   double get _anchorEnd => widget.rightToLeft ? _anchorLeftX : _anchorRightX;
 
+  /// Global center position x of the thumb.
   double get _thumbCenterPosition => lerpDouble(
         _anchorStart,
         _anchorEnd,
         _currentThumbFraction,
       )!;
 
+  /// If stretch is enabled, calculates the width of the thumb while the thumb is moving.
   double get _stretchedThumbWidth {
     assert(widget.stretchThumb);
     return (_thumbCenterPosition - _trackStart).abs() + _thumbWidth / 2.0;
@@ -338,58 +360,66 @@ class _SlideActionState extends State<SlideAction>
           widget.disabledColorTint,
           isDisabled ? BlendMode.srcATop : BlendMode.dst,
         ),
-        child: UnconstrainedBox(
-          alignment: Alignment.center,
-          constrainedAxis: Axis.horizontal,
-          child: ConstrainedBox(
-            key: _trackGlobalKey,
-            constraints: BoxConstraints.tight(
-              Size.fromHeight(
-                widget.trackHeight,
-              ),
-            ),
-            child: _trackRenderBox == null
-                ? null
-                : Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Positioned.fill(
-                        child: widget.trackBuilder(
-                          context,
-                          this,
-                        ),
-                      ),
-                      Align(
-                        alignment: widget.stretchThumb
-                            ? _thumbAlignmentStart
-                            : Alignment.lerp(
-                                _thumbAlignmentStart,
-                                _thumbAlignmentEnd,
-                                _currentThumbFraction,
-                              )!,
-                        child: GestureDetector(
-                          behavior: widget.thumbHitTestBehavior,
-                          onHorizontalDragStart: _onThumbHorizontalDragStart,
-                          onHorizontalDragEnd: _onThumbHorizontalDragEnd,
-                          onHorizontalDragCancel: _onThumbHorizontalDragCancel,
-                          onHorizontalDragUpdate: _onThumbDragUpdate,
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints.tight(
-                              Size.fromWidth(
-                                widget.stretchThumb
-                                    ? _stretchedThumbWidth
-                                    : _thumbWidth,
-                              ),
-                            ),
-                            child: widget.thumbBuilder(
+        child: NotificationListener<SizeChangedLayoutNotification>(
+          onNotification: (_) {
+            WidgetsBinding.instance!.addPostFrameCallback((_) => setState(() { }));
+            return false;
+          },
+          child: SizeChangedLayoutNotifier(
+            child: UnconstrainedBox(
+              alignment: Alignment.center,
+              constrainedAxis: Axis.horizontal,
+              child: ConstrainedBox(
+                key: _trackGlobalKey,
+                constraints: BoxConstraints.tight(
+                  Size.fromHeight(
+                    widget.trackHeight,
+                  ),
+                ),
+                child: _trackRenderBox == null
+                    ? null
+                    : Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Positioned.fill(
+                            child: widget.trackBuilder(
                               context,
                               this,
                             ),
                           ),
-                        ),
+                          Align(
+                            alignment: widget.stretchThumb
+                                ? _thumbAlignmentStart
+                                : Alignment.lerp(
+                                    _thumbAlignmentStart,
+                                    _thumbAlignmentEnd,
+                                    _currentThumbFraction,
+                                  )!,
+                            child: GestureDetector(
+                              behavior: widget.thumbHitTestBehavior,
+                              onHorizontalDragStart: _onThumbHorizontalDragStart,
+                              onHorizontalDragEnd: _onThumbHorizontalDragEnd,
+                              onHorizontalDragCancel: _onThumbHorizontalDragCancel,
+                              onHorizontalDragUpdate: _onThumbDragUpdate,
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints.tight(
+                                  Size.fromWidth(
+                                    widget.stretchThumb
+                                        ? _stretchedThumbWidth
+                                        : _thumbWidth,
+                                  ),
+                                ),
+                                child: widget.thumbBuilder(
+                                  context,
+                                  this,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+              ),
+            ),
           ),
         ),
       ),

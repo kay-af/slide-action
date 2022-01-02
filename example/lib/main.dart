@@ -48,28 +48,120 @@ class SlideToPerformExample extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text("Slide Action Example"),
-        ),
-        body: SingleChildScrollView(
-          child: Column(
-            children: [
-              const AnimatedImageThumbExample(),
-              const IndianFlagExample(),
-              const IOS4SlideToUnlockExample(),
-            ]
-                .map(
-                  (slideToPerformWidget) => Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: slideToPerformWidget,
-                  ),
-                )
-                .toList(),
+    return Scaffold(
+      body: SizedBox.expand(
+        child: Scrollbar(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            physics: const ClampingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  "Simple Slide Action",
+                  style: Theme.of(context).textTheme.headline5,
+                ),
+                const Text("Below is a basic slide action widget!"),
+                SimpleExample(callback: () {}),
+                const Text("Slide action has RTL support!"),
+                SimpleExample(rightToLeft: true, callback: () {}),
+                const Text("Disabled slide action widget!"),
+                const SimpleExample(callback: null),
+                const Text("The thumb can be stretched when dragged!"),
+                SimpleExample(stretchThumb: true, callback: () {}),
+                const Text(
+                    "Control the curve and duration of the animation that drives the thumb to the resting position!"),
+                SimpleExample(
+                  callback: () {},
+                  resetCurve: Curves.bounceOut,
+                  resetDuration: const Duration(milliseconds: 3000),
+                ),
+                const Divider(),
+                Text(
+                  "Complex Examples",
+                  style: Theme.of(context).textTheme.headline5,
+                ),
+                const Text("Slide to hoist the flag!"),
+                const IndianFlagExample(),
+                const Text("iOS4 styled slide to unlock!"),
+                const IOS4SlideToUnlockExample(),
+                const Divider(),
+                Text(
+                  "And much more :)",
+                  style: Theme.of(context).textTheme.headline4,
+                ),
+              ]
+                  .map(
+                    (slideToPerformWidget) => Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: slideToPerformWidget,
+                    ),
+                  )
+                  .toList(),
+            ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class SimpleExample extends StatelessWidget {
+  const SimpleExample({
+    this.rightToLeft = false,
+    this.callback,
+    this.stretchThumb = false,
+    this.resetCurve = Curves.easeOut,
+    this.resetDuration = const Duration(milliseconds: 400),
+    Key? key,
+  }) : super(key: key);
+
+  final bool rightToLeft;
+  final VoidCallback? callback;
+  final bool stretchThumb;
+  final Curve resetCurve;
+  final Duration resetDuration;
+
+  @override
+  Widget build(BuildContext context) {
+    return SlideAction(
+      snapAnimationCurve: resetCurve,
+      snapAnimationDuration: resetDuration,
+      stretchThumb: stretchThumb,
+      rightToLeft: rightToLeft,
+      trackBuilder: (context, state) {
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(100),
+            color: Colors.white,
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 8,
+              ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+                "Thumb fraction: ${state.thumbFraction.toStringAsPrecision(2)}"),
+          ),
+        );
+      },
+      thumbBuilder: (context, state) {
+        return Container(
+          margin: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: Colors.orange,
+            borderRadius: BorderRadius.circular(100),
+          ),
+          child: Icon(
+            rightToLeft ? Icons.chevron_left : Icons.chevron_right,
+            color: Colors.white,
+          ),
+        );
+      },
+      onActionPerformed: callback,
     );
   }
 }
