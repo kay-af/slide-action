@@ -17,12 +17,6 @@ import 'package:slide_action/slide_action.dart';
 /// is enabled in the associated [SlideAction] widget.
 mixin SlideActionStateMixin {
 
-  /// Is the thumb currently being dragged?
-  bool get isDragging;
-
-  /// Is the widget disabled?
-  bool get isDisabled;
-
   /// What percentage of the total length of the track has been covered by the thumb?
   /// The value ranges from *0.0* (0% - *start*) to *1.0* (100% - *end*).
   ///

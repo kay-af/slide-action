@@ -1,8 +1,6 @@
-import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:slide_action/slide_action.dart';
 import 'package:slide_action/src/frame_change_callback_provider.dart';
 
@@ -70,7 +68,7 @@ class SlideAction extends StatefulWidget {
   SlideAction({
     required this.trackBuilder,
     required this.thumbBuilder,
-    required this.onActionPerformed,
+    required this.action,
     this.trackHeight = 64,
     this.thumbWidth,
     this.snapAnimationDuration = const Duration(milliseconds: 400),
@@ -80,16 +78,19 @@ class SlideAction extends StatefulWidget {
     this.stretchThumb = false,
     this.disabledColorTint = Colors.white54,
     this.thumbHitTestBehavior = HitTestBehavior.opaque,
-    this.endBehavior = const SlideActionEndBehavior.resetDelayed(
-      duration: Duration(milliseconds: 500),
-    ),
     Key? key,
-  })  : assert(trackHeight > 0 && trackHeight.isFinite && !trackHeight.isNaN,
-            "Invalid track height"),
-        assert(thumbWidth == null || (thumbWidth > 0 && !thumbWidth.isNaN),
-            "Invalid thumb width"),
-        assert(actionSnapThreshold >= 0.0 && actionSnapThreshold <= 1.0,
-            "Value out of range"),
+  })  : assert(
+          trackHeight > 0 && trackHeight.isFinite && !trackHeight.isNaN,
+          "Invalid track height",
+        ),
+        assert(
+          thumbWidth == null || (thumbWidth > 0 && !thumbWidth.isNaN),
+          "Invalid thumb width",
+        ),
+        assert(
+          actionSnapThreshold >= 0.5 && actionSnapThreshold <= 1.0,
+          "Value out of range",
+        ),
         super(key: key);
 
   final SlideActionWidgetBuilder trackBuilder;
@@ -99,12 +100,11 @@ class SlideAction extends StatefulWidget {
   final double actionSnapThreshold;
   final Duration snapAnimationDuration;
   final Curve snapAnimationCurve;
-  final VoidCallback? onActionPerformed;
+  final VoidCallback? action;
   final bool rightToLeft;
   final bool stretchThumb;
   final Color disabledColorTint;
   final HitTestBehavior thumbHitTestBehavior;
-  final SlideActionEndBehavior endBehavior;
 
   @override
   _SlideActionState createState() => _SlideActionState();
@@ -130,9 +130,6 @@ class _SlideActionState extends State<SlideAction>
 
   late final FrameChangeCallbackProvider _smoothThumbUpdateCallbackProvider;
 
-  /// Supports the resetDelayed end behavior.
-  Timer? _endBehaviorTimer;
-
   RenderBox? _trackRenderBox;
 
   // #region LifeCycle Methods
@@ -152,7 +149,7 @@ class _SlideActionState extends State<SlideAction>
     );
     WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
       setState(() => _trackRenderBox =
-          _trackGlobalKey.currentContext!.findRenderObject() as RenderBox);
+          _trackGlobalKey.currentContext!.findRenderObject() as RenderBox,);
     });
   }
 
@@ -160,7 +157,6 @@ class _SlideActionState extends State<SlideAction>
   void dispose() {
     _thumbAnimationController.dispose();
     _smoothThumbUpdateCallbackProvider.dispose();
-    _endBehaviorTimer?.cancel();
     super.dispose();
   }
 
@@ -180,7 +176,7 @@ class _SlideActionState extends State<SlideAction>
   double get thumbFraction => _currentThumbFraction;
 
   @override
-  bool get isDisabled => widget.onActionPerformed == null;
+  bool get isDisabled => widget.action == null;
 
   // #endregion
 
@@ -295,16 +291,7 @@ class _SlideActionState extends State<SlideAction>
         .orCancel
         .then((_) {
       _detachAnimationListener();
-      widget.onActionPerformed!();
-
-      if (widget.endBehavior.resetImmediately) {
-        _animateThumbToStart();
-      } else if (!widget.endBehavior.stayIndefinitely) {
-        _endBehaviorTimer = Timer(
-          widget.endBehavior.stayDuration!,
-          _animateThumbToStart,
-        );
-      }
+      widget.action!();
     }).catchError((_) {
       _detachAnimationListener();
     });
@@ -315,7 +302,6 @@ class _SlideActionState extends State<SlideAction>
       _isDragging = true;
       _fingerOffsetX = details.globalPosition.dx - _thumbCenterPosition;
     });
-    _endBehaviorTimer?.cancel();
     _stopAnimation();
     _smoothThumbUpdateCallbackProvider.start();
   }
@@ -362,7 +348,8 @@ class _SlideActionState extends State<SlideAction>
         ),
         child: NotificationListener<SizeChangedLayoutNotification>(
           onNotification: (_) {
-            WidgetsBinding.instance!.addPostFrameCallback((_) => setState(() { }));
+            WidgetsBinding.instance!
+                .addPostFrameCallback((_) => setState(() {}));
             return false;
           },
           child: SizeChangedLayoutNotifier(
@@ -397,9 +384,11 @@ class _SlideActionState extends State<SlideAction>
                                   )!,
                             child: GestureDetector(
                               behavior: widget.thumbHitTestBehavior,
-                              onHorizontalDragStart: _onThumbHorizontalDragStart,
+                              onHorizontalDragStart:
+                                  _onThumbHorizontalDragStart,
                               onHorizontalDragEnd: _onThumbHorizontalDragEnd,
-                              onHorizontalDragCancel: _onThumbHorizontalDragCancel,
+                              onHorizontalDragCancel:
+                                  _onThumbHorizontalDragCancel,
                               onHorizontalDragUpdate: _onThumbDragUpdate,
                               child: ConstrainedBox(
                                 constraints: BoxConstraints.tight(
