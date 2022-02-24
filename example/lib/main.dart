@@ -76,19 +76,12 @@ class SlideToPerformExample extends StatelessWidget {
                     style: Theme.of(context).textTheme.headline5,
                   ),
                   SimpleExample(
-                    endBehavior: const SlideActionEndBehavior.resetDelayed(
-                      duration: Duration(milliseconds: 1000),
-                    ),
                     callback: () {},
                   ),
                   SimpleExample(
-                    endBehavior:
-                        const SlideActionEndBehavior.resetImmediately(),
                     callback: () {},
                   ),
                   SimpleExample(
-                    endBehavior:
-                        const SlideActionEndBehavior.stayIndefinitely(),
                     callback: () {},
                   ),
                   const Divider(),
@@ -133,8 +126,6 @@ class SimpleExample extends StatelessWidget {
     this.resetDuration = const Duration(milliseconds: 400),
     this.thumbWidth,
     this.trackHeight = 64,
-    this.endBehavior = const SlideActionEndBehavior.resetDelayed(
-        duration: Duration(milliseconds: 500)),
     Key? key,
   }) : super(key: key);
 
@@ -145,12 +136,10 @@ class SimpleExample extends StatelessWidget {
   final Duration resetDuration;
   final double? thumbWidth;
   final double trackHeight;
-  final SlideActionEndBehavior endBehavior;
 
   @override
   Widget build(BuildContext context) {
     return SlideAction(
-      endBehavior: endBehavior,
       trackHeight: trackHeight,
       snapAnimationCurve: resetCurve,
       snapAnimationDuration: resetDuration,

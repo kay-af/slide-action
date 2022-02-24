@@ -169,13 +169,11 @@ class _SlideActionState extends State<SlideAction>
 
   // #region State Interface
 
-  @override
   bool get isDragging => _isDragging;
 
   @override
   double get thumbFraction => _currentThumbFraction;
 
-  @override
   bool get isDisabled => widget.action == null;
 
   // #endregion
@@ -353,9 +351,8 @@ class _SlideActionState extends State<SlideAction>
             return false;
           },
           child: SizeChangedLayoutNotifier(
-            child: UnconstrainedBox(
+            child: Align(
               alignment: Alignment.center,
-              constrainedAxis: Axis.horizontal,
               child: ConstrainedBox(
                 key: _trackGlobalKey,
                 constraints: BoxConstraints.tight(
