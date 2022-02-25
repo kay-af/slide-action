@@ -24,8 +24,8 @@ typedef SlideActionWidgetBuilder = Widget Function(
 /// Slide action has two major components, *track* and *thumb*.
 /// Using the [SlideActionStateMixin] which is provided in the builders
 /// for both, any kind of widget can be created that react to user interactions.
-
 class SlideAction extends StatefulWidget {
+  /// Create a new [SlideAction] widget
   SlideAction({
     required this.trackBuilder,
     required this.thumbBuilder,
@@ -74,9 +74,11 @@ class SlideAction extends StatefulWidget {
   /// The height of the track to use. Must be a number strictly greater than 0.
   final double trackHeight;
 
-  /// * `thumbWidth` The width of the thumb to use (when idle if `stretchThumb` is enabled).
+  /// The width of the thumb to use.
   ///
   /// Must be a number strictly greater than 0.
+  ///
+  /// Uses `trackHeight` as default value if `null`
   ///
   /// The thumb width may be ignored and set to 50% of the laid `trackWidth` if it exceeds the value.
   final double? thumbWidth;

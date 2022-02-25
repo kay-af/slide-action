@@ -33,6 +33,6 @@ mixin SlideActionStateMixin {
   /// Current state of the thumb.
   ThumbState get thumbState;
 
-  /// Is the widget performing some async task.
+  /// Is the widget executing some async function.
   bool get isPerformingAction;
 }
