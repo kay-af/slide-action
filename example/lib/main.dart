@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:slide_action/slide_action.dart';
 
@@ -12,8 +15,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      title: 'Example',
+    return const CupertinoApp(
+      title: 'Slide Action',
       debugShowCheckedModeBanner: false,
       home: SlideToPerformExample(),
     );
@@ -25,94 +28,160 @@ class SlideToPerformExample extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SizedBox.expand(
-        child: Scrollbar(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            physics: const ClampingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
-            ),
-            child: DefaultTextStyle(
-              style: Theme.of(context).textTheme.bodyText2!,
-              textAlign: TextAlign.center,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    "Simple Examples",
-                    style: Theme.of(context).textTheme.headline5,
-                  ),
-                  const Text("Below is a basic slide action widget!"),
-                  SimpleExample(callback: () {}),
-                  const Text("Slide action has RTL support!"),
-                  SimpleExample(rightToLeft: true, callback: () {}),
-                  const Text("Disabled slide action widget!"),
-                  const SimpleExample(callback: null),
-                  const Text("The thumb can be stretched when dragged!"),
-                  SimpleExample(stretchThumb: true, callback: () {}),
-                  const Text(
-                    "Control the curve and duration of the animation that drives the thumb to the resting position!",
-                  ),
-                  SimpleExample(
-                    callback: () {},
-                    resetCurve: Curves.bounceOut,
-                    resetDuration: const Duration(milliseconds: 3000),
-                  ),
-                  const Text("Control the thumb width!"),
-                  SimpleExample(
-                    callback: () {},
-                    thumbWidth: 100,
-                  ),
-                  const Text("And the track height!"),
-                  SimpleExample(
-                    callback: () {},
-                    thumbWidth: 100,
-                    trackHeight: 80,
-                  ),
-                  const Divider(),
-                  Text(
-                    "End Behaviors",
-                    style: Theme.of(context).textTheme.headline5,
-                  ),
-                  SimpleExample(
-                    callback: () {},
-                  ),
-                  SimpleExample(
-                    callback: () {},
-                  ),
-                  SimpleExample(
-                    callback: () {},
-                  ),
-                  const Divider(),
-                  Text(
-                    "Complex Examples",
-                    style: Theme.of(context).textTheme.headline5,
-                  ),
-                  const Text("Colors based on thumb fraction!"),
-                  const ColorChangingExample(),
-                  const Text("The thumb is not limited to simple icons!"),
-                  const IndianFlagExample(),
-                  const Text("iOS4 styled slide to unlock!"),
-                  const IOS4SlideToUnlockExample(),
-                  const Divider(),
-                  Text(
-                    "And much more :)",
-                    style: Theme.of(context).textTheme.headline6,
-                  ),
-                ]
-                    .map(
-                      (slideToPerformWidget) => Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: slideToPerformWidget,
-                      ),
-                    )
-                    .toList(),
+    return CupertinoPageScaffold(
+      navigationBar:
+          const CupertinoNavigationBar(middle: Text("Slide Action Examples")),
+      child: Builder(builder: (context) {
+        return SizedBox.expand(
+          child: Scrollbar(
+            child: SingleChildScrollView(
+              padding:
+                  const EdgeInsets.all(16) + MediaQuery.of(context).padding,
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
+              child: DefaultTextStyle(
+                style: Theme.of(context).textTheme.bodyText2!,
+                textAlign: TextAlign.center,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      "Simple Examples",
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const Text("Below is a basic slide action widget!"),
+                    SimpleExample(callback: () {}),
+                    const Text("Slide action has RTL support!"),
+                    SimpleExample(rightToLeft: true, callback: () {}),
+                    const Text("Disabled slide action widget!"),
+                    const SimpleExample(callback: null),
+                    const Text("The thumb can be stretched when dragged!"),
+                    SimpleExample(stretchThumb: true, callback: () {}),
+                    const Text(
+                      "Control the curve and duration of the animation that drives the thumb to the resting position!",
+                    ),
+                    SimpleExample(
+                      callback: () {},
+                      resetCurve: Curves.bounceOut,
+                      resetDuration: const Duration(milliseconds: 3000),
+                    ),
+                    const Text("Control the thumb width!"),
+                    SimpleExample(
+                      callback: () {},
+                      thumbWidth: 150,
+                    ),
+                    const Text("And the track height!"),
+                    SimpleExample(
+                      callback: () {},
+                      trackHeight: 120,
+                    ),
+                    const Text("Carry out async operations"),
+                    AsyncExample(
+                      callback: () async {
+                        await Future.delayed(const Duration(seconds: 5));
+                        await showCupertinoDialog(
+                          context: context,
+                          builder: (context) => CupertinoAlertDialog(
+                            title: const Text("Greetings"),
+                            content: const Text("Hey there!"),
+                            actions: [
+                              CupertinoDialogAction(
+                                child: const Text("Wave back!"),
+                                onPressed: () =>
+                                    Navigator.of(context).maybePop(),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    const Divider(),
+                    Text(
+                      "Complex Examples",
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const Text("Colors based on thumb fraction!"),
+                    const ColorChangingExample(),
+                    const Text("The thumb is not limited to simple icons!"),
+                    const IndianFlagExample(),
+                    const Text("iOS4 styled slide to unlock!"),
+                    const IOS4SlideToUnlockExample(),
+                    const Divider(),
+                    Text(
+                      "And much more :)",
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ]
+                      .map(
+                        (child) => Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: child,
+                        ),
+                      )
+                      .toList(),
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      }),
+    );
+  }
+}
+
+class AsyncExample extends StatelessWidget {
+  const AsyncExample({
+    this.callback,
+    Key? key,
+  }) : super(key: key);
+
+  final FutureOr<void> Function()? callback;
+
+  @override
+  Widget build(BuildContext context) {
+    return SlideAction(
+      stretchThumb: true,
+      trackBuilder: (context, state) {
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(100),
+            color: Colors.white,
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 8,
+              ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              "Thumb fraction: ${state.thumbFractionalPosition.toStringAsPrecision(2)}",
+            ),
+          ),
+        );
+      },
+      thumbBuilder: (context, state) {
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 400),
+          margin: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: state.thumbState == ThumbState.performingAction
+                ? Colors.grey
+                : Colors.black,
+            borderRadius: BorderRadius.circular(100),
+          ),
+          child: state.thumbState == ThumbState.performingAction
+              ? const CupertinoActivityIndicator(
+                  color: Colors.white,
+                )
+              : const Icon(
+                  Icons.chevron_right,
+                  color: Colors.white,
+                ),
+        );
+      },
+      action: callback,
     );
   }
 }
@@ -130,7 +199,7 @@ class SimpleExample extends StatelessWidget {
   }) : super(key: key);
 
   final bool rightToLeft;
-  final VoidCallback? callback;
+  final FutureOr<void> Function()? callback;
   final bool stretchThumb;
   final Curve resetCurve;
   final Duration resetDuration;
@@ -160,7 +229,7 @@ class SimpleExample extends StatelessWidget {
           ),
           child: Center(
             child: Text(
-              "Thumb fraction: ${state.thumbFraction.toStringAsPrecision(2)}",
+              "Thumb fraction: ${state.thumbFractionalPosition.toStringAsPrecision(2)}",
             ),
           ),
         );
@@ -250,7 +319,7 @@ class ColorChangingExample extends StatelessWidget {
         return Container(
           margin: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            color: lerpColorList(colors, state.thumbFraction),
+            color: lerpColorList(colors, state.thumbFractionalPosition),
             borderRadius: BorderRadius.circular(100),
           ),
           child: const Icon(
@@ -295,7 +364,7 @@ class AnimatedImageThumbExample extends StatelessWidget {
           ),
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 500),
-            child: state.thumbFraction <= 0.5
+            child: state.thumbFractionalPosition <= 0.5
                 ? Image.network(
                     "https://picsum.photos/id/1024/200/200",
                     key: const ValueKey("FirstImage"),
@@ -418,8 +487,8 @@ class IOS4SlideToUnlockExample extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
           ),
           child: Opacity(
-            opacity:
-                lerpDouble(1, 0, (state.thumbFraction * 2).clamp(0.0, 1.0))!,
+            opacity: lerpDouble(
+                1, 0, (state.thumbFractionalPosition * 2).clamp(0.0, 1.0))!,
             child: Center(
               child: Text(
                 "Slide To Unlock",

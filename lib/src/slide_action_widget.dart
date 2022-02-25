@@ -1,74 +1,24 @@
-import 'dart:math';
+import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui';
+
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:slide_action/slide_action.dart';
 import 'package:slide_action/src/frame_change_callback_provider.dart';
+import 'package:slide_action/src/slide_action_state_mixin.dart';
 
-/// Eyeballed constant for smooth thumb movement.
-///
-/// Used in combination with [FrameChangeCallbackProvider] to
-/// generate a lerp factor to smoothly move the *thumb* to
-/// finger position.
-const double kThumbMovementSmoothingFactor = 0.015;
+const double kThumbMovementSmoothingFactor = 0.010;
 
-/// A builder for creating a widget that utilizes [SlideActionStateMixin] to
-/// decorate themself.
-///
-/// Used to build *track* and *thumb* in [SlideAction] widget.
 typedef SlideActionWidgetBuilder = Widget Function(
   BuildContext buildContext,
   SlideActionStateMixin currentState,
 );
 
-/// A customizable widget that shows a *track* and a *thumb* that can be
-/// slid all the way to perform an *action*.
-///
-/// ## Description:
-///
-/// Slide action works by providing a fixed size box for two major components each -
-/// The *track* and the *thumb*.
-///
-/// The height of the track is determined by `trackHeight`
-/// and the *track* fills the parent container horizontally.
-///
-/// The height of the *thumb* matches the `trackHeight` and
-/// the `thumbWidth` behaves in the following manner:
-///
-/// * If `thumbWidth` is **null**, `trackHeight` is used to calculate the width of the thumb.
-/// * If `thumbWidth` is **non-null**, `thumbWidth` is used to calculate the width of the thumb.
-///
-/// Note that if the calculated thumb width exceeds half the laid *track* width, the actual thumb is given a width
-/// of half the laid *track* width.
 class SlideAction extends StatefulWidget {
-  /// Creates a **SlideAction** widget.
-  ///
-  /// * `trackBuilder` - A builder callback to build the track widget using the
-  /// current state of the slide action widget.
-  /// * `thumbBuilder` - A builder callback to build the thumb widget using the
-  /// current state of the slide action widget.
-  /// * `onActionPerformed` - The callback which is called when the slide action
-  /// is performed. The widget is disabled (Gestures are disabled) when this field is null.
-  /// * `trackHeight` - The fixed height given to build the track.
-  /// * `thumbWidth` - Custom width for the thumb. `trackHeight` is used when null. Half of the laid track width
-  /// is used if the value exceeds the same.
-  /// * `snapAnimationDuration` - The duration of the animation which drives the thumb
-  /// to the initial / final position on the track depending on the position of the thumb and `actionSnapThreshold` value when it is
-  /// released.
-  /// * `snapAnimationCurve` - The curve used to drive the snap animation.
-  /// * `actionSnapThreshold` - A value ranging 0.0 to 1.0. Specifies the point along the length
-  /// of the anchor points for the thumb on the track after which if the finger is released, the thumb
-  /// moves to the end and `onActionPerformed` is called.
-  /// * `rightToLeft` - The thumb goes from right to left. Note that the `thumbFraction` in [SlideActionStateMixin]
-  /// considers right as 0.0 and left as 1.0 when true.
-  /// * `stretchThumb` - When true, the thumb stretches when dragged instead of moving.
-  /// * `disabledColorTint` - The color to be used to tint the widget when `onActionPerformed` is null.
-  /// * `thumbHitTestBehavior` - The hit test behavior to be used by the gesture detector wrapping the thumb.
-  /// * `endBehavior` - The behavior of the thumb after the action is performed. See [SlideActionEndBehavior]
-  /// for details.
   SlideAction({
     required this.trackBuilder,
     required this.thumbBuilder,
-    required this.action,
+    this.action,
     this.trackHeight = 64,
     this.thumbWidth,
     this.snapAnimationDuration = const Duration(milliseconds: 400),
@@ -78,6 +28,7 @@ class SlideAction extends StatefulWidget {
     this.stretchThumb = false,
     this.disabledColorTint = Colors.white54,
     this.thumbHitTestBehavior = HitTestBehavior.opaque,
+    this.thumbDragStartBehavior = DragStartBehavior.down,
     Key? key,
   })  : assert(
           trackHeight > 0 && trackHeight.isFinite && !trackHeight.isNaN,
@@ -88,7 +39,7 @@ class SlideAction extends StatefulWidget {
           "Invalid thumb width",
         ),
         assert(
-          actionSnapThreshold >= 0.5 && actionSnapThreshold <= 1.0,
+          actionSnapThreshold > 0.0 && actionSnapThreshold <= 1.0,
           "Value out of range",
         ),
         super(key: key);
@@ -100,11 +51,12 @@ class SlideAction extends StatefulWidget {
   final double actionSnapThreshold;
   final Duration snapAnimationDuration;
   final Curve snapAnimationCurve;
-  final VoidCallback? action;
+  final FutureOr<void> Function()? action;
   final bool rightToLeft;
   final bool stretchThumb;
   final Color disabledColorTint;
   final HitTestBehavior thumbHitTestBehavior;
+  final DragStartBehavior thumbDragStartBehavior;
 
   @override
   _SlideActionState createState() => _SlideActionState();
@@ -114,21 +66,19 @@ class _SlideActionState extends State<SlideAction>
     with TickerProviderStateMixin, SlideActionStateMixin {
   late bool _isDragging;
 
-  /// The fractional position of the thumb on track.
   late double _currentThumbFraction;
 
-  /// The fractional position (X) of the finger on track.
   late double _targetThumbFraction;
 
-  /// The offset of the finger from thumb position when dragging starts.
-  late double _fingerOffsetX;
+  late double _fingerGlobalOffsetX;
 
-  /// Global key to get the render box of the laid track.
   late GlobalKey _trackGlobalKey;
 
   late final AnimationController _thumbAnimationController;
 
   late final FrameChangeCallbackProvider _smoothThumbUpdateCallbackProvider;
+
+  late bool _performingAction;
 
   RenderBox? _trackRenderBox;
 
@@ -138,9 +88,10 @@ class _SlideActionState extends State<SlideAction>
   void initState() {
     super.initState();
     _isDragging = false;
+    _performingAction = false;
     _currentThumbFraction = 0;
     _targetThumbFraction = 0;
-    _fingerOffsetX = 0;
+    _fingerGlobalOffsetX = 0;
     _trackGlobalKey = GlobalKey();
     _thumbAnimationController = AnimationController(vsync: this);
     _smoothThumbUpdateCallbackProvider = FrameChangeCallbackProvider(
@@ -148,8 +99,10 @@ class _SlideActionState extends State<SlideAction>
       callback: _smoothUpdateThumbPosition,
     );
     WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
-      setState(() => _trackRenderBox =
-          _trackGlobalKey.currentContext!.findRenderObject() as RenderBox,);
+      setState(
+        () => _trackRenderBox =
+            _trackGlobalKey.currentContext!.findRenderObject() as RenderBox,
+      );
     });
   }
 
@@ -169,26 +122,41 @@ class _SlideActionState extends State<SlideAction>
 
   // #region State Interface
 
-  bool get isDragging => _isDragging;
+  @override
+  double get thumbFractionalPosition => _currentThumbFraction;
 
   @override
-  double get thumbFraction => _currentThumbFraction;
+  Size get thumbSize => Size(
+        widget.stretchThumb ? _stretchedThumbWidth : _thumbWidth,
+        widget.trackHeight,
+      );
 
-  bool get isDisabled => widget.action == null;
+  @override
+  Size get trackSize => Size(
+        (_trackRightX - _trackLeftX).abs(),
+        widget.trackHeight,
+      );
+
+  @override
+  ThumbState get thumbState => _performingAction
+      ? ThumbState.performingAction
+      : _isDragging
+          ? ThumbState.dragging
+          : ThumbState.idle;
 
   // #endregion
 
   // #region Helpers
 
+  bool get _isDisabled => widget.action == null;
+
   double get _thumbWidth {
-    return min(
-      _trackRenderBox!.size.width / 2.0,
+    return math.min(
+      _trackRenderBox!.size.width * 0.5,
       widget.thumbWidth ?? widget.trackHeight,
     );
   }
 
-  /// Using the frame change callback provider, updates the current thumb position
-  /// to match the finger position smoothly.
   void _smoothUpdateThumbPosition(Duration delta) {
     final double lerp =
         (kThumbMovementSmoothingFactor * delta.inMilliseconds).clamp(0.0, 1.0);
@@ -208,31 +176,24 @@ class _SlideActionState extends State<SlideAction>
   Alignment get _thumbAlignmentEnd =>
       widget.rightToLeft ? Alignment.centerLeft : Alignment.centerRight;
 
-  /// Global position of the left border of the track.
   double get _trackLeftX => _trackRenderBox!.localToGlobal(Offset.zero).dx;
 
-  /// Global position of the right border of the track.
   double get _trackRightX => _trackLeftX + _trackRenderBox!.size.width;
 
-  /// Global center position of the thumb on the left side of the track.
   double get _anchorLeftX => _trackLeftX + _thumbWidth / 2.0;
 
-  /// Global center position of the thumb on the right side of the track.
   double get _anchorRightX => _trackRightX - _thumbWidth / 2.0;
 
-  /// To support RTL
   double get _trackStart => widget.rightToLeft ? _trackRightX : _trackLeftX;
   double get _anchorStart => widget.rightToLeft ? _anchorRightX : _anchorLeftX;
   double get _anchorEnd => widget.rightToLeft ? _anchorLeftX : _anchorRightX;
 
-  /// Global center position x of the thumb.
   double get _thumbCenterPosition => lerpDouble(
         _anchorStart,
         _anchorEnd,
         _currentThumbFraction,
       )!;
 
-  /// If stretch is enabled, calculates the width of the thumb while the thumb is moving.
   double get _stretchedThumbWidth {
     assert(widget.stretchThumb);
     return (_thumbCenterPosition - _trackStart).abs() + _thumbWidth / 2.0;
@@ -287,24 +248,37 @@ class _SlideActionState extends State<SlideAction>
     _thumbAnimationController
         .animateTo(1, curve: widget.snapAnimationCurve)
         .orCancel
-        .then((_) {
+        .then((_) async {
       _detachAnimationListener();
-      widget.action!();
-    }).catchError((_) {
+      setState(() {
+        _performingAction = true;
+      });
+      try {
+        await widget.action?.call();
+      } catch (_) {
+      } finally {
+        setState(() {
+          _performingAction = false;
+        });
+        _animateThumbToStart();
+      }
+    }).catchError((err) {
       _detachAnimationListener();
     });
   }
 
   void _onThumbHorizontalDragStart(DragStartDetails details) {
+    if (_performingAction) return;
     setState(() {
       _isDragging = true;
-      _fingerOffsetX = details.globalPosition.dx - _thumbCenterPosition;
+      _fingerGlobalOffsetX = details.globalPosition.dx - _thumbCenterPosition;
     });
     _stopAnimation();
     _smoothThumbUpdateCallbackProvider.start();
   }
 
   void _onThumbHorizontalDragEnd(DragEndDetails details) {
+    if (_performingAction) return;
     setState(() => _isDragging = false);
     _smoothThumbUpdateCallbackProvider.stop();
     if (_targetThumbFraction >= widget.actionSnapThreshold) {
@@ -315,17 +289,19 @@ class _SlideActionState extends State<SlideAction>
   }
 
   void _onThumbHorizontalDragCancel() {
+    if (_performingAction) return;
     setState(() => _isDragging = false);
     _smoothThumbUpdateCallbackProvider.stop();
     _animateThumbToStart();
   }
 
   void _onThumbDragUpdate(DragUpdateDetails details) {
+    if (_performingAction) return;
     final double fingerPosition = details.globalPosition.dx;
     final double fraction = _clampedInverseLerpDouble(
       _anchorStart,
       _anchorEnd,
-      fingerPosition - _fingerOffsetX,
+      fingerPosition - _fingerGlobalOffsetX,
     );
 
     setState(
@@ -338,11 +314,11 @@ class _SlideActionState extends State<SlideAction>
   @override
   Widget build(BuildContext context) {
     return IgnorePointer(
-      ignoring: isDisabled,
+      ignoring: _isDisabled,
       child: ColorFiltered(
         colorFilter: ColorFilter.mode(
           widget.disabledColorTint,
-          isDisabled ? BlendMode.srcATop : BlendMode.dst,
+          _isDisabled ? BlendMode.srcATop : BlendMode.dst,
         ),
         child: NotificationListener<SizeChangedLayoutNotification>(
           onNotification: (_) {
@@ -380,6 +356,7 @@ class _SlideActionState extends State<SlideAction>
                                     _currentThumbFraction,
                                   )!,
                             child: GestureDetector(
+                              dragStartBehavior: widget.thumbDragStartBehavior,
                               behavior: widget.thumbHitTestBehavior,
                               onHorizontalDragStart:
                                   _onThumbHorizontalDragStart,
