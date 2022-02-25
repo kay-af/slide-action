@@ -1,7 +1,9 @@
 name: slide_action
-description: A customizable slide to perform an action widget.
+description: >-
+  A highly customizable slide to perform an action widget.
+  This package provides an easy-to-use widget which is supported by multiple platforms.
 version: 0.0.1
-homepage: https://github.com/kay-af/slide-action.git
+homepage: https://github.com/kay-af/slide-action
 
 environment:
   sdk: ">=2.15.1 <3.0.0"
