@@ -46,24 +46,6 @@ class SlideToPerformExample extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SlideAction(
-                      trackBuilder: (context, state) {
-                        return Container(
-                          color: Colors.grey,
-                        );
-                      },
-                      thumbBuilder: (context, state) {
-                        return Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Container(
-                            color: Colors.black,
-                          ),
-                        );
-                      },
-                      action: () {
-                        debugPrint('Hello World');
-                      },
-                    ),
                     Text(
                       "Simple Examples",
                       style: Theme.of(context).textTheme.titleLarge,
