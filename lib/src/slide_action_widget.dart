@@ -7,12 +7,23 @@ import 'package:flutter/material.dart';
 import 'package:slide_action/src/frame_change_callback_provider.dart';
 import 'package:slide_action/src/slide_action_state_mixin.dart';
 
+/// Eyeballed constant that works well for smooth thumb movement.
 const double kThumbMovementSmoothingFactor = 0.010;
 
+/// A builder that utlizes the slide action widget state to
+/// build widgets.
+///
+/// Used to build *Track* and *Thumb* of the [SlideAction] widget.
 typedef SlideActionWidgetBuilder = Widget Function(
   BuildContext buildContext,
   SlideActionStateMixin currentState,
 );
+
+/// # Slide Action
+///
+/// Slide action has two major components, *track* and *thumb*.
+/// Using the [SlideActionStateMixin] which is provided in the builders
+/// for both, any kind of widget can be created that react to user interactions.
 
 class SlideAction extends StatefulWidget {
   SlideAction({
@@ -44,18 +55,59 @@ class SlideAction extends StatefulWidget {
         ),
         super(key: key);
 
+  /// A widget builder to create the *track* of the slider.
+  /// Use the provided [SlideActionStateMixin] to customize the widget.
   final SlideActionWidgetBuilder trackBuilder;
+
+  /// A widget builder to create the *thumb* over the *track*.
+  /// Use the provided [SlideActionStateMixin] to customize the widget.
   final SlideActionWidgetBuilder thumbBuilder;
-  final double trackHeight;
-  final double? thumbWidth;
-  final double actionSnapThreshold;
-  final Duration snapAnimationDuration;
-  final Curve snapAnimationCurve;
+
+  /// The **action** to perform when thumb slides to the end. Can be an `async` callback.
+  ///
+  /// Passing `null` here will disable the interaction with the widget.
+  ///
+  /// When async operation is being performed, the state passed to the trackBuilder and thumbBuilder
+  /// will have `isPerformingAction == true`
   final FutureOr<void> Function()? action;
+
+  /// The height of the track to use. Must be a number strictly greater than 0.
+  final double trackHeight;
+
+  /// * `thumbWidth` The width of the thumb to use (when idle if `stretchThumb` is enabled).
+  ///
+  /// Must be a number strictly greater than 0.
+  ///
+  /// The thumb width may be ignored and set to 50% of the laid `trackWidth` if it exceeds the value.
+  final double? thumbWidth;
+
+  /// Specifies the percentage of the track that has to be covered by the thumb to perform the action when released.
+  ///
+  /// Must be a number strictly greater than 0 and less than or equal to 1. Default value is 0.85 (85% of the track)
+  final double actionSnapThreshold;
+
+  /// The time taken to reset the thumb to a resting position when released
+  final Duration snapAnimationDuration;
+
+  /// The animation curve to use when snapping the thumb to a resting position
+  final Curve snapAnimationCurve;
+
+  /// Enable right to left
   final bool rightToLeft;
+
+  /// Specifies whether thumb stretches when dragged.
+  ///
+  /// It also affects the `thumbSize` of the state passed to the
+  /// *track* and *thumb* builders.
   final bool stretchThumb;
+
+  /// If the widget is diabled (`action == null`), this color will be used to tint the widget
   final Color disabledColorTint;
+
+  /// The *hit test behavior* used by the [GestureDetector] of the thumb
   final HitTestBehavior thumbHitTestBehavior;
+
+  /// The *drag start behavior* used by the [GestureDetector] of the thumb
   final DragStartBehavior thumbDragStartBehavior;
 
   @override
@@ -64,6 +116,8 @@ class SlideAction extends StatefulWidget {
 
 class _SlideActionState extends State<SlideAction>
     with TickerProviderStateMixin, SlideActionStateMixin {
+  // #region Var Declarations
+
   late bool _isDragging;
 
   late double _currentThumbFraction;
@@ -81,6 +135,8 @@ class _SlideActionState extends State<SlideAction>
   late bool _performingAction;
 
   RenderBox? _trackRenderBox;
+
+  // #endregion
 
   // #region LifeCycle Methods
 
@@ -138,11 +194,11 @@ class _SlideActionState extends State<SlideAction>
       );
 
   @override
-  ThumbState get thumbState => _performingAction
-      ? ThumbState.performingAction
-      : _isDragging
-          ? ThumbState.dragging
-          : ThumbState.idle;
+  ThumbState get thumbState =>
+      _isDragging ? ThumbState.dragging : ThumbState.idle;
+
+  @override
+  bool get isPerformingAction => _performingAction;
 
   // #endregion
 
@@ -254,7 +310,9 @@ class _SlideActionState extends State<SlideAction>
         _performingAction = true;
       });
       try {
-        await widget.action?.call();
+        if (!_isDisabled) {
+          await widget.action?.call();
+        }
       } catch (_) {
       } finally {
         setState(() {

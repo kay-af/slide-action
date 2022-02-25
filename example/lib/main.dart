@@ -46,6 +46,24 @@ class SlideToPerformExample extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    SlideAction(
+                      trackBuilder: (context, state) {
+                        return Container(
+                          color: Colors.grey,
+                        );
+                      },
+                      thumbBuilder: (context, state) {
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Container(
+                            color: Colors.black,
+                          ),
+                        );
+                      },
+                      action: () {
+                        debugPrint('Hello World');
+                      },
+                    ),
                     Text(
                       "Simple Examples",
                       style: Theme.of(context).textTheme.titleLarge,
@@ -166,12 +184,10 @@ class AsyncExample extends StatelessWidget {
           duration: const Duration(milliseconds: 400),
           margin: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            color: state.thumbState == ThumbState.performingAction
-                ? Colors.grey
-                : Colors.black,
+            color: state.isPerformingAction ? Colors.grey : Colors.black,
             borderRadius: BorderRadius.circular(100),
           ),
-          child: state.thumbState == ThumbState.performingAction
+          child: state.isPerformingAction
               ? const CupertinoActivityIndicator(
                   color: Colors.white,
                 )

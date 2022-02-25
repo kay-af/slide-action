@@ -1,6 +1,12 @@
-A simple yet highly customizable **Slide To Perform an Action** widget.
+# Slide Action
 
-![Slide action widget]("preview_assets/example.gif")
+## Overview
+
+A simple yet highly customizable **"Slide To Perform an Action"** widget.
+
+![Slide action widget preview](https://raw.githubusercontent.com/kay-af/slide-action/main/preview_assets/example.gif)
+
+---
 
 ## Features
 
@@ -14,12 +20,29 @@ A simple yet highly customizable **Slide To Perform an Action** widget.
 
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder. 
+Minimal example
 
 ```dart
-const like = 'sample';
+SlideAction(
+    trackBuilder: (context, state) {
+        // Use the state to customize the track widget.
+        return Container(
+            color: Colors.grey,
+        );
+    },
+    thumbBuilder: (context, state) {
+        // Use the state to customize the thumb widget.
+        return Container(
+            color: Colors.red,
+        );
+    },
+    action: () {
+        debugPrint('Hello World');
+    },
+);
 ```
+
+---
 
 ## Additional information
 
