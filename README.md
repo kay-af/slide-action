@@ -6,7 +6,7 @@ A simple yet highly customizable **"Slide To Perform an Action"** widget.
 
 ![Slide action widget preview](https://raw.githubusercontent.com/kay-af/slide-action/main/preview_assets/example.gif)
 
----
+<br>
 
 ## Features
 
@@ -17,7 +17,7 @@ A simple yet highly customizable **"Slide To Perform an Action"** widget.
 * Multi-platform support.
 * Multiple examples (included in *example* project)
 
----
+<br>
 
 ## Usage
 
@@ -65,9 +65,13 @@ SlideAction(
 );
 ```
 
+<br>
+
 Output:
 
-![SlideAction Simple Example 1](preview_assets/quick-example-1.gif)
+![SlideAction Simple Example 1](https://raw.githubusercontent.com/kay-af/slide-action/main/preview_assets/quick-example-1.gif)
+
+<br>
 
 ### Async Example
 
@@ -125,14 +129,16 @@ SlideAction(
 );
 ```
 
+<br>
+
 Output:
 
-![SlideAction Simple Example 2](preview_assets/quick-example-2.gif)
+![SlideAction Simple Example 2](https://raw.githubusercontent.com/kay-af/slide-action/main/preview_assets/quick-example-2.gif)
 
----
+<br>
 
 ## Additional information
 
 Check the **documentation** or **example project** on github for advanced usage.
 
-Facing issues?: Feel free to report an issue on the github page.
+Facing issues? Feel free to report an issue on the github page.
