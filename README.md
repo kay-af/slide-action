@@ -1,10 +1,20 @@
-# Slide Action
+<a href="https://pub.dev/packages/slide_action"><img src="https://img.shields.io/badge/pub-0.0.1-green" alt="pub.dev"></a>
+[![likes](https://badges.bar/slide_action/likes)](https://pub.dev/packages/slide_action/score)
+[![popularity](https://badges.bar/slide_action/popularity)](https://pub.dev/packages/slide_action/score)
+[![pub points](https://badges.bar/slide_action/pub%20points)](https://pub.dev/packages/slide_action/score)
+<a href="https://pub.dev/packages/slide_action"><img src="https://img.shields.io/badge/license-MIT-yellow" alt="pub.dev"></a>
 
-## Overview
+# ➡️ Slide Action
 
-A simple yet highly customizable **"Slide To Perform an Action"** widget.
+**Slide action** is a simple to use widget where the user has to *slide to perform an action*.
 
-![Slide action widget preview](https://raw.githubusercontent.com/kay-af/slide-action/main/preview_assets/example.gif)
+<br/>
+
+<h2 style="text-align: center;">Example Preview 📱</h2>
+
+<br/>
+
+<img src="https://raw.githubusercontent.com/kay-af/slide-action/main/preview_assets/example.gif" alt="Slide action widget preview" style="display: block; margin: auto; border-radius: 16px; box-shadow: 2px 2px 16px #c2c2c2;"></img>
 
 <br>
 
@@ -16,6 +26,23 @@ A simple yet highly customizable **"Slide To Perform an Action"** widget.
 * Async operations support.
 * Multi-platform support.
 * Multiple examples (included in *example* project)
+
+<br>
+
+## Installing
+
+Add this line to your `pubspec.yaml` under the dependencies:
+
+```yaml
+dependencies:
+  slide_action: ^0.0.1
+```
+
+alternatively, you can use this command:
+
+```
+flutter pub add slide_action
+```
 
 <br>
 
@@ -66,8 +93,6 @@ SlideAction(
 ```
 
 <br>
-
-Output:
 
 ![SlideAction Simple Example 1](https://raw.githubusercontent.com/kay-af/slide-action/main/preview_assets/quick-example-1.gif)
 
@@ -131,14 +156,12 @@ SlideAction(
 
 <br>
 
-Output:
-
 ![SlideAction Simple Example 2](https://raw.githubusercontent.com/kay-af/slide-action/main/preview_assets/quick-example-2.gif)
 
 <br>
 
 ## Additional information
 
-Check the **documentation** or **example project** on github for advanced usage.
+Check the <a href="https://pub.dev/documentation/slide_action/latest/">documentation</a> or <a href="https://github.com/kay-af/slide-action/tree/main/example">example project</a> on github for advanced usage.
 
-Facing issues? Feel free to report an issue on the github page.
+Facing issues? Feel free to <a href="https://github.com/kay-af/slide-action/issues">report an issue</a> on the <a href="https://github.com/kay-af/slide-action">Github Page</a>
