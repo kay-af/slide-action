@@ -10,11 +10,11 @@
 
 <br/>
 
-<h2 style="text-align: center;">Example Preview 📱</h2>
+## Example Preview 📱
 
 <br/>
 
-<img src="https://raw.githubusercontent.com/kay-af/slide-action/main/preview_assets/example.gif" alt="Slide action widget preview" style="display: block; margin: auto; border-radius: 16px; box-shadow: 2px 2px 16px #c2c2c2;"></img>
+![Slide action preview](https://raw.githubusercontent.com/kay-af/slide-action/main/preview_assets/example.gif)
 
 <br>
 
