@@ -29,7 +29,7 @@ class SlideAction extends StatefulWidget {
   SlideAction({
     required this.trackBuilder,
     required this.thumbBuilder,
-    this.action,
+    required this.action,
     this.trackHeight = 64,
     this.thumbWidth,
     this.snapAnimationDuration = const Duration(milliseconds: 400),

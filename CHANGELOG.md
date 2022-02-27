@@ -1,3 +1,10 @@
+# [0.0.1+2] - Minor Changes (27/02/2022)
+
+- Action field is now required.
+- Fixed Readme.
+
+<br>
+
 # [0.0.1+1] - Documentation Revision (27/02/2022)
 
 - Revised Documentation.
