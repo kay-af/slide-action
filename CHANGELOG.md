@@ -3,6 +3,8 @@
 - Revised Documentation.
 - No core changes.
 
+<br>
+
 # [0.0.1] - Slide Action Widget (25/02/2022)
 
 - Added slide action widget and example project.
