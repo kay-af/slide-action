@@ -15,7 +15,7 @@ const double kThumbMovementSmoothingFactor = 0.010;
 ///
 /// Used to build *Track* and *Thumb* of the [SlideAction] widget.
 typedef SlideActionWidgetBuilder = Widget Function(
-  BuildContext buildContext,
+  BuildContext context,
   SlideActionStateMixin currentState,
 );
 

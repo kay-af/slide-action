@@ -1,4 +1,4 @@
-<a href="https://pub.dev/packages/slide_action"><img src="https://img.shields.io/badge/pub-0.0.1+2-green" alt="pub.dev"></a>
+<a href="https://pub.dev/packages/slide_action"><img src="https://img.shields.io/badge/pub-0.0.1+3-green" alt="pub.dev"></a>
 [![likes](https://badges.bar/slide_action/likes)](https://pub.dev/packages/slide_action/score)
 [![popularity](https://badges.bar/slide_action/popularity)](https://pub.dev/packages/slide_action/score)
 [![pub points](https://badges.bar/slide_action/pub%20points)](https://pub.dev/packages/slide_action/score)
@@ -33,7 +33,7 @@ Add this line to your `pubspec.yaml` under the dependencies:
 
 ```yaml
 dependencies:
-  slide_action: ^0.0.1+2
+  slide_action: ^0.0.1+3
 ```
 
 alternatively, you can use this command:

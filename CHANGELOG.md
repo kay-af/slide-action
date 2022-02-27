@@ -1,3 +1,7 @@
+# [0.0.1+3] - Minor Changes (27/02/2022)
+
+- Changed buildContext to context in widget builders.
+
 # [0.0.1+2] - Minor Changes (27/02/2022)
 
 - Action field is now required.
