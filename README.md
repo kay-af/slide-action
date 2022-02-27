@@ -8,11 +8,9 @@
 
 **Slide action** is a simple to use widget where the user has to *slide to perform an action*.
 
-<br/>
+<br>
 
 ## Example Preview 📱
-
-<br/>
 
 ![Slide action preview](https://raw.githubusercontent.com/kay-af/slide-action/main/preview_assets/example.gif)
 
