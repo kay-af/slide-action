@@ -106,8 +106,8 @@ class SlideAction extends StatefulWidget {
 
   /// If the widget is diabled (`action == null`), this color will be used to tint the widget.
   ///
-  /// **Note**: Ignored on web as color blend modes do not work properly on web as of *Flutter 3.3.4 (Stable)*.
-  /// Opacity of the widget is halved when disabled on web.
+  /// **Note**: Ignored on web as color blend modes do not work properly on web.
+  /// Opacity of the widget is reduced when disabled on web.
   final Color disabledColorTint;
 
   /// The *hit test behavior* used by the [GestureDetector] of the thumb
@@ -373,11 +373,11 @@ class _SlideActionState extends State<SlideAction>
     );
   }
 
-  // In the web platform, color blend modes are buggy as of the latest build.
+  // In the web platform, color blend modes are buggy as of the latest stable flutter build.
   Widget _disableWrapper(Widget child) {
     if (kIsWeb) {
       return Opacity(
-        opacity: _isDisabled ? 0.5 : 1,
+        opacity: _isDisabled ? 0.6 : 1,
         child: child,
       );
     }
