@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:slide_action/src/frame_change_callback_provider.dart';
@@ -103,7 +104,10 @@ class SlideAction extends StatefulWidget {
   /// *track* and *thumb* builders.
   final bool stretchThumb;
 
-  /// If the widget is diabled (`action == null`), this color will be used to tint the widget
+  /// If the widget is diabled (`action == null`), this color will be used to tint the widget.
+  ///
+  /// **Note**: Ignored on web as color blend modes do not work properly on web.
+  /// Opacity of the widget is reduced when disabled on web.
   final Color disabledColorTint;
 
   /// The *hit test behavior* used by the [GestureDetector] of the thumb
@@ -156,7 +160,7 @@ class _SlideActionState extends State<SlideAction>
       vsync: this,
       callback: _smoothUpdateThumbPosition,
     );
-    WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       setState(
         () => _trackRenderBox =
             _trackGlobalKey.currentContext!.findRenderObject() as RenderBox,
@@ -369,20 +373,34 @@ class _SlideActionState extends State<SlideAction>
     );
   }
 
+  // In the web platform, color blend modes are buggy as of the latest stable flutter build.
+  Widget _disableWrapper(Widget child) {
+    if (kIsWeb) {
+      return Opacity(
+        opacity: _isDisabled ? 0.6 : 1,
+        child: child,
+      );
+    }
+
+    return ColorFiltered(
+      colorFilter: ColorFilter.mode(
+        widget.disabledColorTint,
+        _isDisabled ? BlendMode.srcATop : BlendMode.dst,
+      ),
+      child: child,
+    );
+  }
+
   // #endregion
 
   @override
   Widget build(BuildContext context) {
     return IgnorePointer(
       ignoring: _isDisabled,
-      child: ColorFiltered(
-        colorFilter: ColorFilter.mode(
-          widget.disabledColorTint,
-          _isDisabled ? BlendMode.srcATop : BlendMode.dst,
-        ),
-        child: NotificationListener<SizeChangedLayoutNotification>(
+      child: _disableWrapper(
+        NotificationListener<SizeChangedLayoutNotification>(
           onNotification: (_) {
-            WidgetsBinding.instance!
+            WidgetsBinding.instance
                 .addPostFrameCallback((_) => setState(() {}));
             return false;
           },

@@ -23,8 +23,27 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class SlideToPerformExample extends StatelessWidget {
+class SlideToPerformExample extends StatefulWidget {
   const SlideToPerformExample({Key? key}) : super(key: key);
+
+  @override
+  State<SlideToPerformExample> createState() => _SlideToPerformExampleState();
+}
+
+class _SlideToPerformExampleState extends State<SlideToPerformExample> {
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,94 +52,91 @@ class SlideToPerformExample extends StatelessWidget {
           const CupertinoNavigationBar(middle: Text("Slide Action Examples")),
       child: Builder(builder: (context) {
         return SizedBox.expand(
-          child: Scrollbar(
-            child: SingleChildScrollView(
-              padding:
-                  const EdgeInsets.all(16) + MediaQuery.of(context).padding,
-              physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics(),
-              ),
-              child: DefaultTextStyle(
-                style: Theme.of(context).textTheme.bodyText2!,
-                textAlign: TextAlign.center,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      "Simple Examples",
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const Text("Below is a basic slide action widget!"),
-                    SimpleExample(callback: () {}),
-                    const Text("Slide action has RTL support!"),
-                    SimpleExample(rightToLeft: true, callback: () {}),
-                    const Text("Disabled slide action widget!"),
-                    const SimpleExample(callback: null),
-                    const Text("The thumb can be stretched when dragged!"),
-                    SimpleExample(stretchThumb: true, callback: () {}),
-                    const Text(
-                      "Control the curve and duration of the animation that drives the thumb to the resting position!",
-                    ),
-                    SimpleExample(
-                      callback: () {},
-                      resetCurve: Curves.bounceOut,
-                      resetDuration: const Duration(milliseconds: 3000),
-                    ),
-                    const Text("Control the thumb width!"),
-                    SimpleExample(
-                      callback: () {},
-                      thumbWidth: 150,
-                    ),
-                    const Text("And the track height!"),
-                    SimpleExample(
-                      callback: () {},
-                      trackHeight: 120,
-                    ),
-                    const Text("Carry out async operations"),
-                    AsyncExample(
-                      callback: () async {
-                        await Future.delayed(const Duration(seconds: 5));
-                        await showCupertinoDialog(
-                          context: context,
-                          builder: (context) => CupertinoAlertDialog(
-                            title: const Text("Greetings"),
-                            content: const Text("Hey there!"),
-                            actions: [
-                              CupertinoDialogAction(
-                                child: const Text("Wave back!"),
-                                onPressed: () =>
-                                    Navigator.of(context).maybePop(),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                    const Divider(),
-                    Text(
-                      "Complex Examples",
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const Text("Colors based on thumb fraction!"),
-                    const ColorChangingExample(),
-                    const Text("The thumb is not limited to simple icons!"),
-                    const IndianFlagExample(),
-                    const Text("iOS4 styled slide to unlock!"),
-                    const IOS4SlideToUnlockExample(),
-                    const Divider(),
-                    Text(
-                      "And much more :)",
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                  ]
-                      .map(
-                        (child) => Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: child,
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            padding: const EdgeInsets.all(16) + MediaQuery.of(context).padding,
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+            child: DefaultTextStyle(
+              style: Theme.of(context).textTheme.bodyText2!,
+              textAlign: TextAlign.center,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    "Simple Examples",
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const Text("Below is a basic slide action widget!"),
+                  SimpleExample(callback: () {}),
+                  const Text("Slide action has RTL support!"),
+                  SimpleExample(rightToLeft: true, callback: () {}),
+                  const Text("Disabled slide action widget!"),
+                  const SimpleExample(callback: null),
+                  const Text("The thumb can be stretched when dragged!"),
+                  SimpleExample(stretchThumb: true, callback: () {}),
+                  const Text(
+                    "Control the curve and duration of the animation that drives the thumb to the resting position!",
+                  ),
+                  SimpleExample(
+                    callback: () {},
+                    resetCurve: Curves.bounceOut,
+                    resetDuration: const Duration(milliseconds: 3000),
+                  ),
+                  const Text("Control the thumb width!"),
+                  SimpleExample(
+                    callback: () {},
+                    thumbWidth: 150,
+                  ),
+                  const Text("And the track height!"),
+                  SimpleExample(
+                    callback: () {},
+                    trackHeight: 120,
+                  ),
+                  const Text("Carry out async operations"),
+                  AsyncExample(
+                    callback: () async {
+                      await Future.delayed(const Duration(seconds: 5));
+                      await showCupertinoDialog(
+                        context: context,
+                        builder: (context) => CupertinoAlertDialog(
+                          title: const Text("Greetings"),
+                          content: const Text("Hey there!"),
+                          actions: [
+                            CupertinoDialogAction(
+                              child: const Text("Wave back!"),
+                              onPressed: () => Navigator.of(context).maybePop(),
+                            ),
+                          ],
                         ),
-                      )
-                      .toList(),
-                ),
+                      );
+                    },
+                  ),
+                  const Divider(),
+                  Text(
+                    "Complex Examples",
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const Text("Colors based on thumb fraction!"),
+                  const ColorChangingExample(),
+                  const Text("The thumb is not limited to simple icons!"),
+                  const IndianFlagExample(),
+                  const Text("iOS4 styled slide to unlock!"),
+                  const IOS4SlideToUnlockExample(),
+                  const Divider(),
+                  Text(
+                    "And much more :)",
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ]
+                    .map(
+                      (child) => Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: child,
+                      ),
+                    )
+                    .toList(),
               ),
             ),
           ),

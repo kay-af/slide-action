@@ -6,7 +6,7 @@
 
 # ➡️ Slide Action
 
-**Slide action** is a simple to use widget where the user has to *slide to perform an action*.
+**Slide action** is a simple to use widget where the user has to _slide to perform an action_.
 
 <br>
 
@@ -18,12 +18,12 @@
 
 ## Features
 
-* Highly customizable.
-* Smooth thumb movement.
-* RTL support.
-* Async operations support.
-* Multi-platform support.
-* Multiple examples (included in *example* project)
+- Highly customizable.
+- Smooth thumb movement.
+- RTL support.
+- Async operations support.
+- Multi-platform support.
+- Multiple examples (included in _example_ project)
 
 <br>
 
@@ -155,6 +155,12 @@ SlideAction(
 <br>
 
 ![SlideAction Simple Example 2](https://raw.githubusercontent.com/kay-af/slide-action/main/preview_assets/quick-example-2.gif)
+
+<br>
+
+## Notes
+
+- As of version 0.0.2, _disabledColorTint_ property does not work on web as the color blend modes support is currently buggy for web. The opacity of the widget is reduced instead in case of web when disabled.
 
 <br>
 
